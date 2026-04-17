@@ -1,6 +1,6 @@
 import {
-    OPPONENT_SLOT_SIZE,
     OPPONENT_SLOTS,
+    OPPONENT_SLOT_SIZE,
     SELF_STATE_SIZE,
     TRACK_CONTEXT_SIZE,
     buildObservations,
@@ -11,16 +11,17 @@ import type { Jockey } from './types';
 
 const OPP_BASE = SELF_STATE_SIZE + TRACK_CONTEXT_SIZE; // 26
 
+/** Proportional gain on the cruise tang controller. */
+const CRUISE_GAIN = 5;
+/** Max tang the cruise selector can output; KICK reserves 1.0. */
+const CRUISE_TANG_CAP = 0.75;
+
 const STATE_CRUISE = 0;
 const STATE_PASSING = 1;
 const STATE_KICK = 2;
 const STATE_SETTLING = 3;
 
-/**
- * Tunable BT parameters — keep **all fields and default numbers** in sync with
- * `horse_racing/opponents/behavior_tree.py` (`BTConfig` + defaults + archetypes)
- * in the hr-simulation repo (camelCase here ↔ snake_case there).
- */
+/** Tunable BT parameters. */
 export interface BTConfig {
     cruiseLow: number;
     cruiseHigh: number;
@@ -60,19 +61,19 @@ export interface BTConfig {
     offLaneAccelRelief: number;
 }
 
-/** Default BT tuning values — keep in sync with Python `BTConfig`. */
+/** Default BT tuning values. */
 export const DEFAULT_CONFIG: BTConfig = {
     cruiseLow: 0.55,
-    cruiseHigh: 0.70,
-    targetLane: -0.90,
+    cruiseHigh: 0.7,
+    targetLane: -0.9,
     lateralAggression: 0.7,
     kickPhase: 0.75,
-    kickEarlyMargin: 0.10,
+    kickEarlyMargin: 0.1,
     kickLateCap: 0.92,
     blockProgressMax: 0.03,
     blockLateralTol: 0.15,
     blockMinSlowness: 0.03,
-    conserveThreshold: 0.30,
+    conserveThreshold: 0.3,
     passMinTicks: 40,
     passClearLateral: 0.25,
     passCooldownTicks: 80,
@@ -94,7 +95,6 @@ export const DEFAULT_CONFIG: BTConfig = {
 
 // ============================================================
 // Archetypes — weight profiles for different racing styles.
-// Must match `ARCHETYPES` / archetype_*() in behavior_tree.py (same keys & values).
 // ============================================================
 
 export const ARCHETYPES: Record<string, Partial<BTConfig>> = {
@@ -112,31 +112,31 @@ export const ARCHETYPES: Record<string, Partial<BTConfig>> = {
         cruiseHigh: 0.85,
         targetLane: -0.92,
         lateralAggression: 0.85,
-        kickPhase: 0.65,
+        kickPhase: 0.75,
         kickEarlyMargin: 0.05,
         kickLateCap: 0.88,
         blockMinSlowness: 0.01,
         passCooldownTicks: 40,
-        defendDrift: 0.20,
+        defendDrift: 0.2,
         wPass: 1.3,
         wKick: 1.2,
         wDraft: 0.5,
         // Stay on the gas near the rail; only rate if badly wrong-side.
-        offLanePenaltyStart: 0.10,
+        offLanePenaltyStart: 0.1,
         offLaneTangPenaltyScale: 0.35,
-        offLaneTangPenaltyMax: 0.10,
+        offLaneTangPenaltyMax: 0.1,
         offLaneDecelScale: 0.75,
         offLaneAccelRelief: 0.07,
     },
     closer: {
         cruiseLow: 0.48,
-        cruiseHigh: 0.60,
+        cruiseHigh: 0.64,
         targetLane: -0.75,
         lateralAggression: 0.6,
         kickPhase: 0.78,
         kickEarlyMargin: 0.06,
         kickLateCap: 0.92,
-        conserveThreshold: 0.40,
+        conserveThreshold: 0.4,
         settleTicks: 50,
         defendOnScore: 0.8,
         wPass: 0.7,
@@ -150,12 +150,12 @@ export const ARCHETYPES: Record<string, Partial<BTConfig>> = {
         offLaneAccelRelief: 0.0,
     },
     speedball: {
-        cruiseLow: 0.60,
+        cruiseLow: 0.6,
         cruiseHigh: 0.75,
-        targetLane: -0.80,
+        targetLane: -0.8,
         lateralAggression: 0.8,
-        kickPhase: 0.70,
-        kickEarlyMargin: 0.10,
+        kickPhase: 0.7,
+        kickEarlyMargin: 0.1,
         kickLateCap: 0.88,
         blockMinSlowness: 0.005,
         passMinTicks: 30,
@@ -165,7 +165,7 @@ export const ARCHETYPES: Record<string, Partial<BTConfig>> = {
         wDraft: 0.6,
         offLanePenaltyStart: 0.08,
         offLaneTangPenaltyScale: 0.38,
-        offLaneTangPenaltyMax: 0.10,
+        offLaneTangPenaltyMax: 0.1,
         offLaneDecelScale: 0.7,
         offLaneAccelRelief: 0.09,
     },
@@ -174,12 +174,12 @@ export const ARCHETYPES: Record<string, Partial<BTConfig>> = {
         cruiseHigh: 0.68,
         targetLane: -0.88,
         lateralAggression: 0.65,
-        kickPhase: 0.80,
+        kickPhase: 0.8,
         blockMinSlowness: 0.08,
         passCooldownTicks: 150,
         defendOnScore: 0.9,
         wPass: 0.5,
-        wKick: 0.8,
+        wKick: 0.9,
         wDraft: 1.0,
         offLanePenaltyStart: 0.07,
         offLaneTangPenaltyMax: 0.14,
@@ -341,7 +341,8 @@ export class BTJockey implements Jockey {
             const progressDelta = obs[base + 1];
             const tvelDelta = obs[base + 2];
             const normalOffset = obs[base + 3];
-            if (!(progressDelta > 0 && progressDelta < cfg.blockProgressMax)) continue;
+            if (!(progressDelta > 0 && progressDelta < cfg.blockProgressMax))
+                continue;
             if (Math.abs(normalOffset) > cfg.blockLateralTol) continue;
             if (tvelDelta >= -cfg.blockMinSlowness) continue;
             const severity = Math.abs(tvelDelta);
@@ -355,23 +356,36 @@ export class BTJockey implements Jockey {
         const cfg = this.config;
         const remaining = 1.0 - progress;
         const earlyPhase = cfg.kickPhase - cfg.kickEarlyMargin;
-        const latePhase = Math.min(cfg.kickPhase + cfg.kickEarlyMargin, cfg.kickLateCap);
+        const latePhase = Math.min(
+            cfg.kickPhase + cfg.kickEarlyMargin,
+            cfg.kickLateCap
+        );
         if (progress < earlyPhase) return -10;
         if (progress >= latePhase) return 10;
         const sustainability = staminaFrac - remaining * 1.5;
         if (sustainability <= 0) return -1;
+        // Mid-window KICK only beats CRUISE when wKick * (0.5 + sustainability*3) > 1.0
+        // (the cruise baseline). For default wKick=1, that requires sustainability > 0.167.
+        // Bumping kickPhase alone won't trigger mid-window kicks unless wKick is also raised.
         return (0.5 + sustainability * 3.0) * cfg.wKick;
     }
 
     // ---- Perception helpers ----
 
     private isDrafting(obs: Float64Array): boolean {
+        // Thresholds mirror Race.computeDraftBonus (race.ts):
+        //   progressDelta in (0.005, 0.05)
+        //   lateral diff < 1.0 m → normalized 1.0 / TRACK_HALF_WIDTH(10.325) ≈ 0.097
+        //   tvel >= self.tvel - 0.5 m/s → normalized -0.5 / maxSpeed(20) = -0.025
         for (let s = 0; s < OPPONENT_SLOTS; s++) {
             const base = OPP_BASE + s * OPPONENT_SLOT_SIZE;
             if (obs[base] < 0.5) continue;
-            if (obs[base + 1] > 0.01 && obs[base + 1] < 0.05
-                && Math.abs(obs[base + 3]) < 0.10
-                && obs[base + 2] >= -0.02) {
+            if (
+                obs[base + 1] > 0.005 &&
+                obs[base + 1] < 0.05 &&
+                Math.abs(obs[base + 3]) < 0.097 &&
+                obs[base + 2] >= -0.025
+            ) {
                 return true;
             }
         }
@@ -385,8 +399,11 @@ export class BTJockey implements Jockey {
             if (obs[base] < 0.5) continue;
             const progressDelta = obs[base + 1];
             const normalOffset = obs[base + 3];
-            if (progressDelta > -0.01 && progressDelta < cfg.blockProgressMax
-                && normalOffset < -cfg.passClearLateral) {
+            if (
+                progressDelta > -0.01 &&
+                progressDelta < cfg.blockProgressMax &&
+                normalOffset < -cfg.passClearLateral
+            ) {
                 return true;
             }
         }
@@ -398,9 +415,12 @@ export class BTJockey implements Jockey {
         for (let s = 0; s < OPPONENT_SLOTS; s++) {
             const base = OPP_BASE + s * OPPONENT_SLOT_SIZE;
             if (obs[base] < 0.5) continue;
-            if (obs[base + 1] > 0 && obs[base + 1] < cfg.blockProgressMax
-                && Math.abs(obs[base + 3]) < cfg.blockLateralTol
-                && obs[base + 2] < -cfg.blockMinSlowness) {
+            if (
+                obs[base + 1] > 0 &&
+                obs[base + 1] < cfg.blockProgressMax &&
+                Math.abs(obs[base + 3]) < cfg.blockLateralTol &&
+                obs[base + 2] < -cfg.blockMinSlowness
+            ) {
                 return true;
             }
         }
@@ -416,7 +436,10 @@ export class BTJockey implements Jockey {
             const tv = obs[base + 2];
             const no = obs[base + 3];
             if (pd >= -0.03 && pd < 0 && tv > 0.03 && no > 0.05) {
-                max = Math.max(max, tv * 5.0 + (1.0 - Math.abs(pd) / 0.03) * 0.3);
+                max = Math.max(
+                    max,
+                    tv * 5.0 + (1.0 - Math.abs(pd) / 0.03) * 0.3
+                );
             }
         }
         return max;
@@ -428,13 +451,14 @@ export class BTJockey implements Jockey {
         input: InputState,
         obs: Float64Array,
         st: HorseState,
-        staminaFrac: number,
+        staminaFrac: number
     ): InputState {
         const cfg = this.config;
         const threat = this.computeThreatScore(obs);
         if (!st.defending && threat > cfg.defendOnScore) st.defending = true;
-        else if (st.defending && threat < cfg.defendOffScore) st.defending = false;
-        if (!st.defending || staminaFrac < 0.30) return input;
+        else if (st.defending && threat < cfg.defendOffScore)
+            st.defending = false;
+        if (!st.defending || staminaFrac < 0.3) return input;
         return {
             tangential: Math.max(input.tangential, cfg.defendTangMin),
             normal: input.normal + cfg.defendDrift,
@@ -453,10 +477,13 @@ export class BTJockey implements Jockey {
 
     private cruiseSpeed(speedRatio: number, staminaFrac: number): number {
         const cfg = this.config;
-        let tang: number;
-        if (speedRatio < cfg.cruiseLow - 0.05) tang = 0.5;
-        else if (speedRatio > cfg.cruiseHigh + 0.05) tang = 0.0;
-        else tang = 0.25;
+        // Proportional controller: tang = (cruiseHigh - speedRatio) * gain.
+        // Each archetype settles at a stable equilibrium below cruiseHigh
+        // (no oscillation). Capped at 0.75 so KICK is the only state that
+        // outputs a full 1.0. cruiseLow no longer affects the selector — it's
+        // retained in BTConfig for the tuning UI but is informational only.
+        let tang = (cfg.cruiseHigh - speedRatio) * CRUISE_GAIN;
+        tang = Math.max(0, Math.min(CRUISE_TANG_CAP, tang));
         if (staminaFrac < cfg.conserveThreshold) tang = Math.min(tang, 0.25);
         return tang;
     }
@@ -469,13 +496,14 @@ export class BTJockey implements Jockey {
     private rateForLaneConvergence(
         tang: number,
         lateralNorm: number,
-        targetLane: number,
+        targetLane: number
     ): number {
         const cfg = this.config;
         const err = Math.abs(lateralNorm - targetLane);
         if (err <= cfg.offLanePenaltyStart) return tang;
         const excess = err - cfg.offLanePenaltyStart;
-        const raw = excess * cfg.offLaneTangPenaltyScale * cfg.offLaneDecelScale;
+        const raw =
+            excess * cfg.offLaneTangPenaltyScale * cfg.offLaneDecelScale;
         const penalty = Math.min(cfg.offLaneTangPenaltyMax, raw);
         let out = tang - penalty + cfg.offLaneAccelRelief;
         out = Math.max(0, Math.min(tang, out));
@@ -487,7 +515,7 @@ export class BTJockey implements Jockey {
     private doCruise(
         speedRatio: number,
         staminaFrac: number,
-        lateralNorm: number,
+        lateralNorm: number
     ): InputState {
         const cfg = this.config;
         let tang = this.cruiseSpeed(speedRatio, staminaFrac);
@@ -507,18 +535,22 @@ export class BTJockey implements Jockey {
         if (this.isBlockedDuringKick(obs)) {
             return { tangential: 1.0, normal: 0.5 };
         }
-        return { tangential: 1.0, normal: this.steerToLane(lateralNorm, this.config.targetLane) };
+        return {
+            tangential: 1.0,
+            normal: this.steerToLane(lateralNorm, this.config.targetLane),
+        };
     }
 
     private doSettle(
         st: HorseState,
         speedRatio: number,
         staminaFrac: number,
-        lateralNorm: number,
+        lateralNorm: number
     ): InputState {
         const cfg = this.config;
         const t = Math.min(st.ticks / cfg.settleTicks, 1.0);
-        const target = st.settleFromLane + (cfg.targetLane - st.settleFromLane) * t;
+        const target =
+            st.settleFromLane + (cfg.targetLane - st.settleFromLane) * t;
         let tang = this.cruiseSpeed(speedRatio, staminaFrac);
         tang = this.rateForLaneConvergence(tang, lateralNorm, target);
         return {
@@ -541,7 +573,12 @@ export class BTJockey implements Jockey {
         // KICK is absorbing — once entered, never leave
         if (st.state === STATE_KICK) {
             st.ticks++;
-            return this.applyDefense(this.doKick(obs, lateralNorm), obs, st, staminaFrac);
+            return this.applyDefense(
+                this.doKick(obs, lateralNorm),
+                obs,
+                st,
+                staminaFrac
+            );
         }
 
         // PASSING: committed for passMinTicks
@@ -549,13 +586,23 @@ export class BTJockey implements Jockey {
             st.ticks++;
             if (progress >= cfg.kickLateCap) {
                 this.transition(st, STATE_KICK);
-                return this.applyDefense(this.doKick(obs, lateralNorm), obs, st, staminaFrac);
+                return this.applyDefense(
+                    this.doKick(obs, lateralNorm),
+                    obs,
+                    st,
+                    staminaFrac
+                );
             }
             if (st.ticks >= cfg.passMinTicks && !this.stillBlocked(obs)) {
                 this.transition(st, STATE_SETTLING);
                 st.settleFromLane = lateralNorm;
             } else {
-                return this.applyDefense(this.doPass(staminaFrac), obs, st, staminaFrac);
+                return this.applyDefense(
+                    this.doPass(staminaFrac),
+                    obs,
+                    st,
+                    staminaFrac
+                );
             }
         }
 
@@ -564,7 +611,12 @@ export class BTJockey implements Jockey {
             st.ticks++;
             if (progress >= cfg.kickLateCap) {
                 this.transition(st, STATE_KICK);
-                return this.applyDefense(this.doKick(obs, lateralNorm), obs, st, staminaFrac);
+                return this.applyDefense(
+                    this.doKick(obs, lateralNorm),
+                    obs,
+                    st,
+                    staminaFrac
+                );
             }
             if (st.ticks >= cfg.settleTicks) {
                 this.transition(st, STATE_CRUISE);
@@ -572,7 +624,9 @@ export class BTJockey implements Jockey {
             } else {
                 return this.applyDefense(
                     this.doSettle(st, speedRatio, staminaFrac, lateralNorm),
-                    obs, st, staminaFrac,
+                    obs,
+                    st,
+                    staminaFrac
                 );
             }
         }
@@ -584,30 +638,42 @@ export class BTJockey implements Jockey {
             st.globalTick - st.lastTransitionTick >= cfg.transitionMinTicks;
 
         const kickU = this.scoreKick(progress, staminaFrac);
-        const passU = st.cooldown <= 0 && canTransition
-            ? this.scorePass(obs) : -10;
+        const passU =
+            st.cooldown <= 0 && canTransition ? this.scorePass(obs) : -10;
         const cruiseU = this.scoreCruise(obs, staminaFrac);
 
         if (kickU >= cruiseU && kickU >= passU && kickU > 0) {
             this.transition(st, STATE_KICK);
-            return this.applyDefense(this.doKick(obs, lateralNorm), obs, st, staminaFrac);
+            return this.applyDefense(
+                this.doKick(obs, lateralNorm),
+                obs,
+                st,
+                staminaFrac
+            );
         }
 
         if (passU > cruiseU && passU > 0 && canTransition) {
             this.transition(st, STATE_PASSING);
-            return this.applyDefense(this.doPass(staminaFrac), obs, st, staminaFrac);
+            return this.applyDefense(
+                this.doPass(staminaFrac),
+                obs,
+                st,
+                staminaFrac
+            );
         }
 
         st.ticks++;
         return this.applyDefense(
             this.doCruise(speedRatio, staminaFrac, lateralNorm),
-            obs, st, staminaFrac,
+            obs,
+            st,
+            staminaFrac
         );
     }
 
     private computeActions(
         race: Race,
-        horseIds?: number[],
+        horseIds?: number[]
     ): Map<number, InputState> {
         if (this.disposed) return new Map();
 

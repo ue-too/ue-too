@@ -44,6 +44,12 @@ export function computeAccelerations(
 
     // --- Tangential ---
     let a_t = computeCruiseForce(tangentialVel, attrs.cruiseSpeed);
+    // When the horse is above cruiseSpeed (cruise force is braking), positive
+    // jockey input scales the brake down — at full kick the brake disappears
+    // entirely so the horse can sprint to maxSpeed.
+    if (a_t < 0 && clampedTan > 0) {
+        a_t *= 1 - clampedTan;
+    }
     a_t += clampedTan * F_T_MAX * attrs.forwardAccel;
     a_t -= C_DRAG * tangentialVel;
     // Slope gravity: uphill (slope > 0) decelerates, downhill accelerates
