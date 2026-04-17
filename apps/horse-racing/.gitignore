@@ -1,0 +1,3 @@
+# tune-bts artifact: tuned values land directly in bt-jockey.ts; the JSON
+# is a working file, not a committed record.
+tune-bts-results.json

@@ -452,8 +452,59 @@ async function main(): Promise<void> {
         console.log(`  ${a.padEnd(13)} ${compact}`);
     }
 
-    // Task 9 (next) appends JSON output here using the same in-scope
-    // variables: itersOverride, racesOverride, best, bestFit, bestMetrics.
+    // ---- diff vs starting (only params that moved by >= 5% of their range) ----
+    const diffsVsStarting: Record<
+        string,
+        Record<string, [number, number]>
+    > = {};
+    for (const a of ARCHETYPE_NAMES) {
+        const start = mergeBtConfig(a, {});
+        const tuned = mergeBtConfig(a, best[a]);
+        const diff: Record<string, [number, number]> = {};
+        for (const p of PERSONALITY_PARAMS) {
+            const [min, max] = PARAM_RANGES[p];
+            const range = max - min;
+            if (Math.abs(tuned[p] - start[p]) >= 0.05 * range) {
+                diff[p] = [start[p], tuned[p]];
+            }
+        }
+        if (Object.keys(diff).length > 0) diffsVsStarting[a] = diff;
+    }
+
+    // ---- emit JSON ----
+    const result = {
+        config: {
+            iters: itersOverride,
+            racesPerEval: racesOverride,
+            tracks: [...TRACK_FILES],
+            sigma_init: SIGMA_INIT,
+            timestamp: new Date().toISOString(),
+        },
+        best_fitness: bestFit,
+        best_archetypes: Object.fromEntries(
+            ARCHETYPE_NAMES.map(a => [a, best[a]])
+        ),
+        metrics: Object.fromEntries(
+            ARCHETYPE_NAMES.map(a => [
+                a,
+                Object.fromEntries(
+                    TRACK_FILES.map(t => [
+                        t,
+                        {
+                            win_rate: winRate(bestMetrics[a][t]),
+                            mean_place: meanPlace(bestMetrics[a][t]),
+                            appearances: bestMetrics[a][t].appearances,
+                        },
+                    ])
+                ),
+            ])
+        ),
+        diffs_vs_starting: diffsVsStarting,
+    };
+
+    const outPath = join(__dirname, '..', 'tune-bts-results.json');
+    writeFileSync(outPath, JSON.stringify(result, null, 2));
+    console.log(`\nResults saved to ${outPath}`);
 }
 
 main().catch(err => {
