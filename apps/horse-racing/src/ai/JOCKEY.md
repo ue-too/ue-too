@@ -105,8 +105,9 @@ otherwise:
 ```
 
 This gives closers (high `kickPhase`, high `wKick`) a late explosive finish
-while front-runners (low `kickPhase`) kick earlier. The `kickLateCap` ensures
-every horse kicks eventually, even if stamina is depleted.
+while other archetypes converge around `kickPhase` 0.70-0.78. The
+`kickLateCap` ensures every horse kicks eventually, even if stamina is
+depleted.
 
 ### Selection rule
 
@@ -169,14 +170,14 @@ These are complementary: the jockey decides to draft, the physics rewards it.
 Each archetype is a `Partial<BTConfig>` that overrides defaults. The key
 differentiators:
 
-| Archetype        | Cruise band | Target lane           | Kick timing | Personality                                                                                                       |
-| ---------------- | ----------- | --------------------- | ----------- | ----------------------------------------------------------------------------------------------------------------- |
-| **Stalker**      | 0.55 - 0.70 | -0.85 (near rail)     | 0.75        | Balanced; high `wDraft` (1.3). Tucks in, conserves energy.                                                        |
-| **Front-runner** | 0.72 - 0.85 | -0.92 (rail)          | 0.65        | Pushes early, defends position (`defendDrift` 0.20), kicks early. Low draft weight.                               |
-| **Closer**       | 0.48 - 0.60 | -0.75 (just off rail) | 0.78        | Conservative cruise, willing to rate to a lane (high `offLaneTangPenaltyMax`); explosive late kick (`wKick` 1.5). |
-| **Speedball**    | 0.60 - 0.75 | -0.80 (near rail)     | 0.70        | Aggressive passer (`wPass` 1.5, short cooldown), keeps drive while shifting (`offLaneAccelRelief` 0.09).          |
-| **Steady**       | 0.58 - 0.68 | -0.88 (near rail)     | 0.80        | Narrow band, rarely passes (`wPass` 0.5, long cooldown), strong defender.                                         |
-| **Drifter**      | 0.52 - 0.65 | -0.82 (near rail)     | 0.78        | Mild draft seeker (`wDraft` 1.2), accepts small lane errors with light forward bias.                              |
+| Archetype        | Cruise band | Target lane           | Kick timing | Personality                                                                                                                     |
+| ---------------- | ----------- | --------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| **Stalker**      | 0.55 - 0.70 | -0.85 (near rail)     | 0.75        | Balanced; high `wDraft` (1.3). Tucks in, conserves energy. Dominant on longer / curvier tracks (e.g. kyoto).                    |
+| **Front-runner** | 0.72 - 0.85 | -0.92 (rail)          | 0.75        | Runs fast, defends position (`defendDrift` 0.20), standard kick timing. Low draft weight. Dominant on short tracks (test_oval). |
+| **Closer**       | 0.48 - 0.64 | -0.75 (just off rail) | 0.78        | Moderate cruise (0.64 keeps contact with the field), explosive late kick (`wKick` 1.5). Competitive on tokyo.                   |
+| **Speedball**    | 0.60 - 0.75 | -0.80 (near rail)     | 0.70        | Aggressive passer (`wPass` 1.5, short cooldown), keeps drive while shifting (`offLaneAccelRelief` 0.09).                        |
+| **Steady**       | 0.58 - 0.68 | -0.88 (near rail)     | 0.80        | Conservative cruise with selective mid-window kick (`wKick` 0.9), strong defender (`defendOnScore` 0.9). Niche on kyoto 2nd.    |
+| **Drifter**      | 0.52 - 0.65 | -0.82 (near rail)     | 0.78        | Mild draft seeker (`wDraft` 1.2), accepts small lane errors with light forward bias. Niche on kyoto 3rd.                        |
 
 ### Lane preferences explained
 
