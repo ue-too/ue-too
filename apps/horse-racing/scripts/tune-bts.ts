@@ -307,6 +307,68 @@ export async function evaluate(
 }
 
 // ============================================================
+// computeFitness — composite score from metrics + diversity penalty
+// ============================================================
+
+const DEAD_LAST_THRESHOLD = 4.0;
+const DEAD_LAST_WEIGHT = 0.5;
+const DIVERSITY_WEIGHT = 0.05;
+
+function bestMeanPlace(
+    perTrack: Record<TrackName, ArchetypeTrackMetrics>
+): number {
+    let best = Infinity;
+    for (const t of TRACK_FILES) {
+        const mp = meanPlace(perTrack[t]);
+        if (mp < best) best = mp;
+    }
+    return best;
+}
+
+function configVector(proposal: Proposal, name: ArchetypeName): number[] {
+    const merged = mergeBtConfig(name, proposal[name]);
+    return PERSONALITY_PARAMS.map(p => {
+        const [min, max] = PARAM_RANGES[p];
+        const v = merged[p];
+        return (v - min) / (max - min); // normalized to [0,1]
+    });
+}
+
+function diversityScore(proposal: Proposal): number {
+    const vectors = ARCHETYPE_NAMES.map(n => configVector(proposal, n));
+    let total = 0;
+    for (let i = 0; i < vectors.length; i++) {
+        for (let j = i + 1; j < vectors.length; j++) {
+            let sq = 0;
+            for (let k = 0; k < vectors[i].length; k++) {
+                const d = vectors[i][k] - vectors[j][k];
+                sq += d * d;
+            }
+            total += Math.sqrt(sq);
+        }
+    }
+    return total;
+}
+
+export function computeFitness(metrics: Metrics, proposal: Proposal): number {
+    let placementTerm = 0;
+    let deadLastPenalty = 0;
+    for (const a of ARCHETYPE_NAMES) {
+        const best = bestMeanPlace(metrics[a]);
+        placementTerm -= best;
+        if (best > DEAD_LAST_THRESHOLD) {
+            deadLastPenalty += best - DEAD_LAST_THRESHOLD;
+        }
+    }
+    const diversity = diversityScore(proposal);
+    return (
+        placementTerm -
+        DEAD_LAST_WEIGHT * deadLastPenalty +
+        DIVERSITY_WEIGHT * diversity
+    );
+}
+
+// ============================================================
 // Entrypoint (skeleton)
 // ============================================================
 

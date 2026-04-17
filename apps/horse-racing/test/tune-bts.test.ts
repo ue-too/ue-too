@@ -3,11 +3,13 @@ import { join } from 'path';
 
 import {
     ARCHETYPE_NAMES,
+    type Metrics,
     PARAM_RANGES,
     PERSONALITY_PARAMS,
     type Proposal,
     TRACK_FILES,
     type TrackName,
+    computeFitness,
     enforceAnchors,
     evaluate,
     gaussian,
@@ -219,5 +221,114 @@ describe('meanPlace / winRate', () => {
     });
     it('winRate returns 0 for zero appearances', () => {
         expect(winRate({ appearances: 0, wins: 0, placeSum: 0 })).toBe(0);
+    });
+});
+
+function metricsBuilder(
+    fill: (
+        a: string,
+        t: string
+    ) => { wins: number; placeSum: number; appearances: number }
+): Metrics {
+    const m = {} as Metrics;
+    for (const a of ARCHETYPE_NAMES) {
+        m[a] = {} as Metrics[(typeof ARCHETYPE_NAMES)[number]];
+        for (const t of TRACK_FILES) {
+            (
+                m[a] as Record<
+                    string,
+                    { wins: number; placeSum: number; appearances: number }
+                >
+            )[t] = fill(a, t);
+        }
+    }
+    return m;
+}
+
+describe('computeFitness', () => {
+    it('returns higher fitness when every archetype has at least one good track', () => {
+        // Symmetric "rock-paper-scissors" outcome — every archetype averages
+        // place 3.0 somewhere; placement_term = -18, dead_last_penalty = 0.
+        const good = metricsBuilder(() => ({
+            wins: 10,
+            placeSum: 30, // mean_place = 3.0 over 10 appearances
+            appearances: 10,
+        }));
+        // Degenerate: every archetype always finishes 5th
+        const bad = metricsBuilder(() => ({
+            wins: 0,
+            placeSum: 50, // mean_place = 5.0
+            appearances: 10,
+        }));
+        const sameProposal: Proposal = startingProposal();
+        const fGood = computeFitness(good, sameProposal);
+        const fBad = computeFitness(bad, sameProposal);
+        expect(fGood).toBeGreaterThan(fBad);
+    });
+
+    it('penalizes archetypes whose best mean place is worse than 4.0', () => {
+        // All archetypes mean_place = 3.5 everywhere — no penalty.
+        const noPenalty = metricsBuilder(() => ({
+            wins: 5,
+            placeSum: 35,
+            appearances: 10,
+        }));
+        // Same except one archetype is always last (mean_place = 6 on every track).
+        const withPenalty = metricsBuilder(a =>
+            a === 'drifter'
+                ? { wins: 0, placeSum: 60, appearances: 10 }
+                : { wins: 5, placeSum: 35, appearances: 10 }
+        );
+        const proposal: Proposal = startingProposal();
+        const fA = computeFitness(noPenalty, proposal);
+        const fB = computeFitness(withPenalty, proposal);
+        // Placement-term diff: drifter best mean place 6.0 vs 3.5 → -2.5 lower.
+        // Dead-last penalty: (6-4)*0.5 = -1.0 more on B.
+        // So fB should be ≥ 3.0 lower than fA.
+        expect(fA - fB).toBeGreaterThan(3.0);
+    });
+
+    it('rewards diverse configs over collapsed configs', () => {
+        const m = metricsBuilder(() => ({
+            wins: 5,
+            placeSum: 35,
+            appearances: 10,
+        }));
+
+        // All archetypes share the same config → minimum diversity.
+        const collapsed: Proposal = {} as Proposal;
+        for (const name of ARCHETYPE_NAMES) {
+            collapsed[name] = {
+                cruiseHigh: 0.7,
+                kickPhase: 0.75,
+                wKick: 1,
+                wPass: 1,
+                wDraft: 1,
+                targetLane: -0.85,
+                conserveThreshold: 0.3,
+                lateralAggression: 0.65,
+            };
+        }
+
+        // Spread configs out across the personality-core space.
+        const spread: Proposal = {} as Proposal;
+        const offsets = [-0.4, -0.25, -0.1, 0.1, 0.25, 0.4];
+        ARCHETYPE_NAMES.forEach((name, idx) => {
+            const off = offsets[idx];
+            spread[name] = {
+                cruiseHigh: 0.7 + off * 0.3,
+                kickPhase: 0.75 + off * 0.2,
+                wKick: 1 + off * 1.5,
+                wPass: 1 + off * 1.5,
+                wDraft: 1 + off * 1.5,
+                targetLane: -0.85 + off * 0.5,
+                conserveThreshold: 0.3 + off * 0.3,
+                lateralAggression: 0.65 + off * 0.3,
+            };
+        });
+
+        const fCollapsed = computeFitness(m, collapsed);
+        const fSpread = computeFitness(m, spread);
+        expect(fSpread).toBeGreaterThan(fCollapsed);
     });
 });
