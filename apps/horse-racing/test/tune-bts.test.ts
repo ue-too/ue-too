@@ -6,11 +6,16 @@ import {
     PARAM_RANGES,
     PERSONALITY_PARAMS,
     type Proposal,
+    TRACK_FILES,
+    type TrackName,
     enforceAnchors,
+    evaluate,
     gaussian,
+    meanPlace,
     mulberry32,
     perturb,
     runRace,
+    winRate,
 } from '../scripts/tune-bts';
 import { mergeBtConfig } from '../src/ai/bt-jockey';
 import { parseTrackJson } from '../src/simulation/track-from-json';
@@ -180,4 +185,39 @@ describe('runRace (smoke)', () => {
         expect(new Set(out.finishOrder).size).toBe(6); // all unique
         expect(out.archetypeBySlot).toHaveLength(6);
     }, 60_000);
+});
+
+describe('evaluate (smoke)', () => {
+    it('produces appearances == racesPerEval for every archetype × track', async () => {
+        const tracks = {
+            test_oval: loadTestTrack('test_oval'),
+            tokyo: loadTestTrack('tokyo'),
+            kyoto: loadTestTrack('kyoto'),
+        };
+        const m = await evaluate(startingProposal(), tracks, 2, 0);
+        for (const a of ARCHETYPE_NAMES) {
+            for (const t of TRACK_FILES) {
+                expect(m[a][t].appearances).toBe(2);
+                expect(m[a][t].wins).toBeGreaterThanOrEqual(0);
+                expect(m[a][t].wins).toBeLessThanOrEqual(2);
+            }
+        }
+    }, 600_000); // 6 archetypes × 3 tracks × 2 races = 36 races; ~tens of seconds
+});
+
+describe('meanPlace / winRate', () => {
+    it('meanPlace returns 6.0 for zero appearances', () => {
+        expect(meanPlace({ appearances: 0, wins: 0, placeSum: 0 })).toBe(6.0);
+    });
+    it('meanPlace divides placeSum by appearances', () => {
+        expect(meanPlace({ appearances: 4, wins: 1, placeSum: 12 })).toBe(3);
+    });
+    it('winRate divides wins by appearances', () => {
+        expect(winRate({ appearances: 10, wins: 3, placeSum: 35 })).toBeCloseTo(
+            0.3
+        );
+    });
+    it('winRate returns 0 for zero appearances', () => {
+        expect(winRate({ appearances: 0, wins: 0, placeSum: 0 })).toBe(0);
+    });
 });

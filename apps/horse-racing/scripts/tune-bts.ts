@@ -32,8 +32,8 @@ export const ARCHETYPE_NAMES = [
 ] as const;
 export type ArchetypeName = (typeof ARCHETYPE_NAMES)[number];
 
-const TRACK_FILES = ['test_oval', 'tokyo', 'kyoto'] as const;
-type TrackName = (typeof TRACK_FILES)[number];
+export const TRACK_FILES = ['test_oval', 'tokyo', 'kyoto'] as const;
+export type TrackName = (typeof TRACK_FILES)[number];
 
 const ITERS = 100;
 const RACES_PER_EVAL = 50;
@@ -237,6 +237,73 @@ export async function runRace(
         archetypeBySlot: slots,
         finished: race.state.phase === 'finished',
     };
+}
+
+// ============================================================
+// evaluate — 3 tracks × racesPerEval races, returns full metrics
+// ============================================================
+
+export interface ArchetypeTrackMetrics {
+    appearances: number;
+    wins: number;
+    placeSum: number;
+}
+
+export type Metrics = Record<
+    ArchetypeName,
+    Record<TrackName, ArchetypeTrackMetrics>
+>;
+
+function emptyMetrics(): Metrics {
+    const m = {} as Metrics;
+    for (const a of ARCHETYPE_NAMES) {
+        m[a] = {} as Record<TrackName, ArchetypeTrackMetrics>;
+        for (const t of TRACK_FILES) {
+            m[a][t] = { appearances: 0, wins: 0, placeSum: 0 };
+        }
+    }
+    return m;
+}
+
+export function meanPlace(m: ArchetypeTrackMetrics): number {
+    if (m.appearances === 0) return 6.0; // worst possible
+    return m.placeSum / m.appearances;
+}
+
+export function winRate(m: ArchetypeTrackMetrics): number {
+    if (m.appearances === 0) return 0;
+    return m.wins / m.appearances;
+}
+
+export async function evaluate(
+    proposal: Proposal,
+    tracks: Record<TrackName, TrackSegment[]>,
+    racesPerEval: number,
+    iter: number
+): Promise<Metrics> {
+    const metrics = emptyMetrics();
+    for (const trackName of TRACK_FILES) {
+        const segs = tracks[trackName];
+        for (let r = 0; r < racesPerEval; r++) {
+            const seed = iter * 1_000_003 + r;
+            const out = await runRace(segs, proposal, seed);
+            const finishedSet = new Set(out.finishOrder);
+            for (let pos = 0; pos < out.archetypeBySlot.length; pos++) {
+                const arch = out.archetypeBySlot[pos];
+                const cell = metrics[arch][trackName];
+                cell.appearances++;
+                if (out.finished && finishedSet.has(pos)) {
+                    const place = out.finishOrder.indexOf(pos) + 1;
+                    cell.placeSum += place;
+                    if (place === 1) cell.wins++;
+                } else {
+                    // DNF: treat as worst place
+                    cell.placeSum += out.archetypeBySlot.length;
+                }
+            }
+        }
+    }
+    return metrics;
 }
 
 // ============================================================
