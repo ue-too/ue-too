@@ -112,7 +112,7 @@ export const ARCHETYPES: Record<string, Partial<BTConfig>> = {
         cruiseHigh: 0.85,
         targetLane: -0.92,
         lateralAggression: 0.85,
-        kickPhase: 0.65,
+        kickPhase: 0.75,
         kickEarlyMargin: 0.05,
         kickLateCap: 0.88,
         blockMinSlowness: 0.01,
@@ -130,7 +130,7 @@ export const ARCHETYPES: Record<string, Partial<BTConfig>> = {
     },
     closer: {
         cruiseLow: 0.48,
-        cruiseHigh: 0.6,
+        cruiseHigh: 0.64,
         targetLane: -0.75,
         lateralAggression: 0.6,
         kickPhase: 0.78,
