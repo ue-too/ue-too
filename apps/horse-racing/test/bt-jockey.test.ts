@@ -249,3 +249,117 @@ describe('BTJockey behaviour', () => {
         expect(action.tangential).toBeLessThanOrEqual(0.75);
     });
 });
+
+describe('BT archetype rebalance regression (mean place)', () => {
+    // Runs N races on test_oval with all 6 tuned archetypes and pins each
+    // archetype's mean finishing place within TOLERANCE. Catches drift in
+    // future config changes. Mean place has a ±0.5 noise floor at N=12, so
+    // tolerance is wide enough to absorb that but narrow enough to flag
+    // meaningful regressions.
+    const N_RACES = 12;
+    const TOLERANCE = 1.5;
+
+    const ARCHETYPE_LIST = [
+        'stalker',
+        'front-runner',
+        'closer',
+        'speedball',
+        'steady',
+        'drifter',
+    ] as const;
+
+    // Pinned from manual tuning session on 2026-04-17. Update these numbers
+    // if intentional tuning shifts the balance; the TOLERANCE should absorb
+    // noise between runs.
+    const PINNED_TEST_OVAL: Record<(typeof ARCHETYPE_LIST)[number], number> = {
+        stalker: 2.8,
+        'front-runner': 1.1,
+        closer: 4.7,
+        speedball: 2.2,
+        steady: 4.3,
+        drifter: 5.9,
+    };
+
+    function seededRng(seed: number): () => number {
+        let s = seed >>> 0;
+        return () => {
+            s = (s + 0x6d2b79f5) >>> 0;
+            let t = s;
+            t = Math.imul(t ^ (t >>> 15), t | 1);
+            t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+            return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        };
+    }
+
+    it(
+        `mean place per archetype on test_oval stays within ±${TOLERANCE} of pinned values`,
+        async () => {
+            const segments = loadOvalTrack();
+            const placeSums: Record<string, number> = {};
+            const appearances: Record<string, number> = {};
+            const { createDefaultAttributes } = await import(
+                '../src/simulation/attributes'
+            );
+
+            for (let r = 0; r < N_RACES; r++) {
+                const rng = seededRng((r + 1) * 1_234_567);
+                const slots = [...ARCHETYPE_LIST];
+                for (let i = slots.length - 1; i > 0; i--) {
+                    const j = Math.floor(rng() * (i + 1));
+                    [slots[i], slots[j]] = [slots[j], slots[i]];
+                }
+                const race = new Race(segments, slots.length);
+                for (let i = 0; i < slots.length; i++) {
+                    const h = race.state.horses[i];
+                    const attrs = createDefaultAttributes();
+                    h.baseAttributes = attrs;
+                    h.effectiveAttributes = { ...attrs };
+                    h.currentStamina = attrs.maxStamina;
+                }
+                const jockeys = slots.map(
+                    name =>
+                        new BTJockey({
+                            ...DEFAULT_CONFIG,
+                            ...ARCHETYPES[name],
+                        })
+                );
+                race.start(null);
+                let guard = 0;
+                while (race.state.phase === 'running' && guard < 15000) {
+                    const inputs = new Map<
+                        number,
+                        { tangential: number; normal: number }
+                    >();
+                    for (let hid = 0; hid < slots.length; hid++) {
+                        const m = await jockeys[hid].inferAsync(race, [hid]);
+                        const inp = m.get(hid);
+                        if (inp) inputs.set(hid, inp);
+                    }
+                    race.tick(inputs);
+                    guard++;
+                }
+                const order = race.state.finishOrder;
+                for (let pos = 0; pos < slots.length; pos++) {
+                    const name = slots[pos];
+                    const place = order.indexOf(pos) + 1;
+                    placeSums[name] = (placeSums[name] ?? 0) + place;
+                    appearances[name] = (appearances[name] ?? 0) + 1;
+                }
+            }
+
+            // Log the actual values on every run — useful for updating PINNED.
+            const observed: Record<string, number> = {};
+            for (const name of ARCHETYPE_LIST) {
+                observed[name] = placeSums[name] / appearances[name];
+            }
+            console.log('observed mean place (test_oval, N=12):', observed);
+
+            for (const name of ARCHETYPE_LIST) {
+                const meanPlace = observed[name];
+                const pinned = PINNED_TEST_OVAL[name];
+                expect(Math.abs(meanPlace - pinned)).toBeLessThan(TOLERANCE);
+            }
+        },
+        600_000
+    );
+});
