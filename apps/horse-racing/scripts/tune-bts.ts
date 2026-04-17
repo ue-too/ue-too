@@ -22,7 +22,7 @@ import type { InputState } from '../src/simulation/types';
 // Config
 // ============================================================
 
-const ARCHETYPE_NAMES = [
+export const ARCHETYPE_NAMES = [
     'stalker',
     'front-runner',
     'closer',
@@ -30,7 +30,7 @@ const ARCHETYPE_NAMES = [
     'steady',
     'drifter',
 ] as const;
-type ArchetypeName = (typeof ARCHETYPE_NAMES)[number];
+export type ArchetypeName = (typeof ARCHETYPE_NAMES)[number];
 
 const TRACK_FILES = ['simple_oval', 'tokyo', 'kyoto'] as const;
 type TrackName = (typeof TRACK_FILES)[number];
@@ -52,6 +52,94 @@ function loadTrack(name: TrackName): TrackSegment[] {
     const path = join(__dirname, '..', 'public', 'tracks', `${name}.json`);
     const raw = JSON.parse(readFileSync(path, 'utf-8')) as unknown;
     return parseTrackJson(raw);
+}
+
+// ============================================================
+// Personality-core params + ranges (mirrors KNOB_META in BtWorkbench.tsx)
+// ============================================================
+
+export type ParamKey =
+    | 'cruiseHigh'
+    | 'kickPhase'
+    | 'wKick'
+    | 'targetLane'
+    | 'wPass'
+    | 'wDraft'
+    | 'conserveThreshold'
+    | 'lateralAggression';
+
+export const PERSONALITY_PARAMS: ParamKey[] = [
+    'cruiseHigh',
+    'kickPhase',
+    'wKick',
+    'targetLane',
+    'wPass',
+    'wDraft',
+    'conserveThreshold',
+    'lateralAggression',
+];
+
+export const PARAM_RANGES: Record<ParamKey, [number, number]> = {
+    cruiseHigh: [0.25, 0.95],
+    kickPhase: [0.5, 0.96],
+    wKick: [0, 3],
+    targetLane: [-0.95, 0.0],
+    wPass: [0, 3],
+    wDraft: [0, 3],
+    conserveThreshold: [0, 0.6],
+    lateralAggression: [0.1, 1.0],
+};
+
+export type Proposal = Record<ArchetypeName, Partial<BTConfig>>;
+
+// ============================================================
+// Mulberry32 + Gaussian
+// ============================================================
+
+export function mulberry32(seed: number): () => number {
+    let s = seed >>> 0;
+    return () => {
+        s = (s + 0x6d2b79f5) >>> 0;
+        let t = s;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+}
+
+/** Box-Muller transform: returns one N(0, 1) sample using the supplied uniform rng. */
+export function gaussian(rng: () => number): number {
+    const u1 = Math.max(rng(), 1e-12);
+    const u2 = rng();
+    return Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+}
+
+// ============================================================
+// Perturb
+// ============================================================
+
+export function perturb(
+    current: Proposal,
+    sigma: number,
+    rng: () => number
+): Proposal {
+    const next: Proposal = {} as Proposal;
+    for (const name of ARCHETYPE_NAMES) {
+        const merged = mergeBtConfig(name, current[name]);
+        const overrides: Partial<BTConfig> = { ...current[name] };
+        for (const param of PERSONALITY_PARAMS) {
+            const [min, max] = PARAM_RANGES[param];
+            const range = max - min;
+            const eps = gaussian(rng) * sigma * range;
+            const raw = merged[param] + eps;
+            (overrides as Record<string, number>)[param] = Math.max(
+                min,
+                Math.min(max, raw)
+            );
+        }
+        next[name] = overrides;
+    }
+    return next;
 }
 
 // ============================================================
