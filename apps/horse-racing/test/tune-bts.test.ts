@@ -1,3 +1,6 @@
+import { readFileSync } from 'fs';
+import { join } from 'path';
+
 import {
     ARCHETYPE_NAMES,
     PARAM_RANGES,
@@ -7,8 +10,10 @@ import {
     gaussian,
     mulberry32,
     perturb,
+    runRace,
 } from '../scripts/tune-bts';
 import { mergeBtConfig } from '../src/ai/bt-jockey';
+import { parseTrackJson } from '../src/simulation/track-from-json';
 
 function startingProposal(): Proposal {
     return {
@@ -159,4 +164,20 @@ describe('enforceAnchors', () => {
         expect(out.drifter.wKick).toBe(0.1);
         expect(out.drifter.wDraft).toBe(0.1);
     });
+});
+
+function loadTestTrack(name: string) {
+    const path = join(__dirname, '..', 'public', 'tracks', `${name}.json`);
+    return parseTrackJson(JSON.parse(readFileSync(path, 'utf-8')));
+}
+
+describe('runRace (smoke)', () => {
+    it('finishes a race on simple_oval with the starting archetype configs', async () => {
+        const segments = loadTestTrack('simple_oval');
+        const out = await runRace(segments, startingProposal(), 1);
+        expect(out.finished).toBe(true);
+        expect(out.finishOrder).toHaveLength(6);
+        expect(new Set(out.finishOrder).size).toBe(6); // all unique
+        expect(out.archetypeBySlot).toHaveLength(6);
+    }, 60_000);
 });

@@ -180,6 +180,66 @@ export function enforceAnchors(p: Proposal): Proposal {
 }
 
 // ============================================================
+// runRace — one headless race with shuffled archetype slots
+// ============================================================
+
+export interface RaceOutcome {
+    finishOrder: number[]; // horse ids in finishing order
+    archetypeBySlot: ArchetypeName[]; // index = horse id
+    finished: boolean; // false on DNF (MAX_TICKS hit)
+}
+
+function shuffleInPlace<T>(arr: T[], rng: () => number): T[] {
+    for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(rng() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+}
+
+export async function runRace(
+    segments: TrackSegment[],
+    proposal: Proposal,
+    seed: number
+): Promise<RaceOutcome> {
+    const rng = mulberry32(seed);
+    const slots = shuffleInPlace([...ARCHETYPE_NAMES], rng);
+
+    const race = new Race(segments, slots.length);
+    for (let i = 0; i < slots.length; i++) {
+        const h = race.state.horses[i];
+        const attrs = createDefaultAttributes();
+        h.baseAttributes = attrs;
+        h.effectiveAttributes = { ...attrs };
+        h.currentStamina = attrs.maxStamina;
+    }
+
+    const jockeys = slots.map(
+        name => new BTJockey(mergeBtConfig(name, proposal[name]))
+    );
+
+    race.start(null);
+
+    let guard = 0;
+    while (race.state.phase === 'running' && guard < MAX_TICKS) {
+        const inputs = new Map<number, InputState>();
+        for (let hid = 0; hid < slots.length; hid++) {
+            const m = await jockeys[hid].inferAsync(race, [hid]);
+            const inp = m.get(hid);
+            if (inp) inputs.set(hid, inp);
+        }
+        race.tick(inputs);
+        guard++;
+    }
+
+    return {
+        finishOrder: [...race.state.finishOrder],
+        archetypeBySlot: slots,
+        finished: race.state.phase === 'finished',
+    };
+}
+
+// ============================================================
 // Entrypoint (skeleton)
 // ============================================================
 
