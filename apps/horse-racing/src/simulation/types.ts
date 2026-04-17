@@ -39,6 +39,7 @@ export interface Horse {
     baseAttributes: CoreAttributes;
     currentStamina: number;
     effectiveAttributes: CoreAttributes;
+    lastDrain: number;
 }
 
 export interface InputState {

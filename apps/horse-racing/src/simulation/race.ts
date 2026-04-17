@@ -4,7 +4,7 @@ import { createDefaultAttributes } from './attributes';
 import { applyExhaustion } from './exhaustion';
 import { stepPhysics } from './physics';
 import { RaceWorld } from './race-world';
-import { drainStamina } from './stamina';
+import { computeDrainScale, drainStamina } from './stamina';
 import { TrackNavigator } from './track-navigator';
 import type { TrackSegment } from './track-types';
 import {
@@ -45,12 +45,14 @@ export function spawnHorses(segments: TrackSegment[], horseCount = 4): Horse[] {
     const startPoint: Point = { x: first.startPoint.x, y: first.startPoint.y };
     const frame = probe.getTrackFrame(startPoint);
 
-    const laneSpacing =
-        count > 1 ? (TRACK_HALF_WIDTH * 2 * 0.8) / (count - 1) : 0;
+    // Fixed 1m spacing between horses (body width 0.65m, ~0.35m gap).
+    // Prevents overlap regardless of horse count.
+    const laneSpacing = 1.0;
+    const innerEdge = -TRACK_HALF_WIDTH * 0.95; // just off the inside rail
 
     return Array.from({ length: count }, (_, id) => {
         const laneOffset =
-            count > 1 ? -TRACK_HALF_WIDTH * 0.8 + id * laneSpacing : 0;
+            count > 1 ? innerEdge + id * laneSpacing : 0;
         const pos: Point = {
             x: startPoint.x + frame.normal.x * laneOffset,
             y: startPoint.y + frame.normal.y * laneOffset,
@@ -69,6 +71,7 @@ export function spawnHorses(segments: TrackSegment[], horseCount = 4): Horse[] {
             baseAttributes: attrs,
             currentStamina: attrs.maxStamina,
             effectiveAttributes: { ...attrs },
+            lastDrain: 0,
         };
     });
 }
@@ -86,6 +89,7 @@ export class Race {
     private segments: TrackSegment[];
     private horseCount: number;
     private raceWorld: RaceWorld;
+    private drainScale: number;
 
     constructor(segments: TrackSegment[], horseCount = 4) {
         this.segments = segments;
@@ -99,6 +103,9 @@ export class Race {
         };
         this.raceWorld = new RaceWorld(segments);
         this.addHorseBodies();
+        const navigator = this.state.horses[0].navigator;
+        const defaultCruise = createDefaultAttributes().cruiseSpeed;
+        this.drainScale = computeDrainScale(navigator.totalLength, defaultCruise);
     }
 
     private addHorseBodies(): void {
@@ -147,7 +154,8 @@ export class Race {
             if (!h.finished) {
                 const frame = h.navigator.getTrackFrame(h.pos);
                 const horseInput = inputs.get(h.id) ?? zeroInput;
-                drainStamina(h, h.effectiveAttributes, horseInput, frame);
+                const draftBonus = this.computeDraftBonus(h);
+                drainStamina(h, h.effectiveAttributes, horseInput, frame, this.drainScale, draftBonus);
             }
         }
 
@@ -168,6 +176,21 @@ export class Race {
         this.state.tick++;
     }
 
+    private computeDraftBonus(horse: Horse): number {
+        const selfLateral = horse.navigator.lateralOffset(horse.pos);
+        for (const other of this.state.horses) {
+            if (other.id === horse.id || other.finished) continue;
+            const progressDelta = other.trackProgress - horse.trackProgress;
+            if (progressDelta <= 0.005 || progressDelta >= 0.05) continue;
+            const otherLateral = other.navigator.lateralOffset(other.pos);
+            if (Math.abs(otherLateral - selfLateral) > 1.0) continue;
+            if (other.tangentialVel >= horse.tangentialVel - 0.5) {
+                return 0.15;
+            }
+        }
+        return 0.0;
+    }
+
     reset(): void {
         this.raceWorld.dispose();
         this.state = {
@@ -179,5 +202,8 @@ export class Race {
         };
         this.raceWorld = new RaceWorld(this.segments);
         this.addHorseBodies();
+        const navigator = this.state.horses[0].navigator;
+        const defaultCruise = createDefaultAttributes().cruiseSpeed;
+        this.drainScale = computeDrainScale(navigator.totalLength, defaultCruise);
     }
 }

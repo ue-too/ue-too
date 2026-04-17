@@ -164,6 +164,25 @@ export class TrackNavigator {
     }
 
     /**
+     * Signed lateral offset from track centerline, in meters.
+     * Positive = outward (normal direction), negative = inward.
+     */
+    lateralOffset(position: Point): number {
+        const seg = this.segment;
+        if (seg.tracktype === 'CURVE') {
+            const dx = position.x - seg.center.x;
+            const dy = position.y - seg.center.y;
+            const turnRadius = Math.sqrt(dx * dx + dy * dy);
+            return turnRadius - seg.radius;
+        }
+        // Straight: project onto normal
+        const frame = this.straightFrame(seg);
+        const offX = position.x - seg.startPoint.x;
+        const offY = position.y - seg.startPoint.y;
+        return offX * frame.normal.x + offY * frame.normal.y;
+    }
+
+    /**
      * Checks whether the horse has left the current segment and advances to
      * the next one if so. Call once per tick after physics.
      */

@@ -24,8 +24,8 @@ function loadOvalTrack() {
 }
 
 describe('observation constants', () => {
-    it('SELF_STATE_SIZE is 14', () => {
-        expect(SELF_STATE_SIZE).toBe(14);
+    it('SELF_STATE_SIZE is 16', () => {
+        expect(SELF_STATE_SIZE).toBe(16);
     });
 
     it('TRACK_CONTEXT_SIZE is 10', () => {
@@ -40,8 +40,8 @@ describe('observation constants', () => {
         expect(OPPONENT_SLOTS).toBe(23);
     });
 
-    it('OBS_SIZE is 139', () => {
-        expect(OBS_SIZE).toBe(139);
+    it('OBS_SIZE is 141', () => {
+        expect(OBS_SIZE).toBe(141);
     });
 });
 
@@ -99,7 +99,7 @@ describe('buildObservations', () => {
         });
     });
 
-    it('each observation has OBS_SIZE (139) elements', () => {
+    it('each observation has OBS_SIZE (141) elements', () => {
         const segments = loadOvalTrack();
         const race = new Race(segments, 4);
         const obs = buildObservations(race);
@@ -251,8 +251,8 @@ describe('buildObservations', () => {
         const race = new Race(segments, 2);
         const obs = buildObservations(race);
         // At start on a straight segment, curvature should be 0
-        expect(obs[0][14]).toBe(0); // currentCurvature
+        expect(obs[0][16]).toBe(0); // currentCurvature
         // slope depends on track, but should be a number
-        expect(typeof obs[0][15]).toBe('number');
+        expect(typeof obs[0][17]).toBe('number');
     });
 });

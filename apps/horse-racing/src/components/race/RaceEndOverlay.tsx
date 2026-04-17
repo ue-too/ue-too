@@ -3,8 +3,7 @@ import { type ReactNode, useCallback } from 'react';
 
 import type { V2SimHandle } from '@/simulation';
 
-const HORSE_COLORS = [0xc9a227, 0x4169e1, 0xe53935, 0x43a047];
-const ORDINALS = ['1st', '2nd', '3rd', '4th'];
+const ORDINALS = ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th', '10th', '11th', '12th'];
 
 interface Props {
     order: number[];
@@ -29,6 +28,9 @@ export function RaceEndOverlay({ order, sim }: Props): ReactNode {
         URL.revokeObjectURL(url);
     }, [sim]);
 
+    const horses = sim.getHorses();
+    const colorMap = new Map(horses.map(h => [h.id, h.color]));
+
     // Build a row per horse: first the finishers in order, then any DNFs.
     const finishers = order.map((id, idx) => ({
         id,
@@ -36,10 +38,10 @@ export function RaceEndOverlay({ order, sim }: Props): ReactNode {
         dnf: false,
     }));
     const finished = new Set(order);
-    const dnfs = HORSE_COLORS
-        .map((_, id) => id)
-        .filter((id) => !finished.has(id))
-        .map((id) => ({ id, rank: -1, dnf: true }));
+    const dnfs = horses
+        .map(h => h.id)
+        .filter(id => !finished.has(id))
+        .map(id => ({ id, rank: -1, dnf: true }));
 
     const rows = [...finishers, ...dnfs];
 
@@ -87,7 +89,7 @@ export function RaceEndOverlay({ order, sim }: Props): ReactNode {
                                 width: 16,
                                 height: 16,
                                 borderRadius: 8,
-                                background: hex(HORSE_COLORS[r.id]),
+                                background: hex(colorMap.get(r.id) ?? 0x888888),
                                 display: 'inline-block',
                             }}
                         />

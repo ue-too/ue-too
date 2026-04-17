@@ -51,9 +51,34 @@ export function makeInitApp(
             reset: () => sim.reset(),
             getPhase: () => sim.getPhase(),
             getHorses: () => sim.getHorses(),
+            getHorseCount: () => sim.getHorseCount(),
+            setHorseCount: count => sim.setHorseCount(count),
+            setTrack: async (url: string) => {
+                const segments = await loadTrack(url);
+                sim.setTrack(segments, url);
+            },
             onPhaseChange: cb => sim.onPhaseChange(cb),
+            onPrecomputeProgress: cb => sim.onPrecomputeProgress(cb),
+            onSimulationReady: cb => sim.onSimulationReady(cb),
+            onPlaybackProgress: cb => sim.onPlaybackProgress(cb),
+            playback: () => sim.playback(),
+            togglePlayback: () => sim.togglePlayback(),
+            seekPlayback: (frame: number) => sim.seekPlayback(frame),
+            getPlaybackSpeed: () => sim.getPlaybackSpeed(),
+            setPlaybackSpeed: (m: number) => sim.setPlaybackSpeed(m),
             setJockey: (jockey: Jockey) => sim.setJockey(jockey),
+            setHorseJockey: (horseId: number, jockey: Jockey | null) => sim.setHorseJockey(horseId, jockey),
+            getHorseJockeyUrl: (horseId: number) => sim.getHorseJockeyUrl(horseId),
+            setHorseJockeyUrl: (horseId: number, url: string | null) => sim.setHorseJockeyUrl(horseId, url),
+
             exportRace: () => sim.exportRace(),
+            importRace: rec => sim.importRace(rec),
+            getTrackSegments: () => sim.getTrackSegments(),
+            runBtBatch: req => sim.runBtBatch(req),
+            followHorse: id => sim.followHorse(id),
+            getFollowedHorse: () => sim.getFollowedHorse(),
+            getCurrentFrame: () => sim.getCurrentFrame(),
+            invalidateJockeyUrl: url => sim.invalidateJockeyUrl(url),
             cleanup: () => sim.cleanup(),
         };
 

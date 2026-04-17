@@ -11,6 +11,10 @@ export class NullJockey implements Jockey {
         return new Map();
     }
 
+    async inferAsync(_race: Race, _horseIds?: number[]): Promise<Map<number, InputState>> {
+        return new Map();
+    }
+
     dispose(): void {
         // nothing to release
     }

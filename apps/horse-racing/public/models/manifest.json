@@ -1,10 +1,62 @@
 [
   {
+    "label": "D2 Jockey",
+    "url": "/models/d2_jockey.onnx"
+  },
+  {
+    "label": "D6 Jockey",
+    "url": "/models/d6_jockey.onnx"
+  },
+  {
     "label": "V13 Jockey",
     "url": "/models/v13_jockey.onnx"
   },
   {
     "label": "V15 Jockey",
     "url": "/models/v15_jockey.onnx"
+  },
+  {
+    "label": "V16 Jockey",
+    "url": "/models/v16_jockey.onnx"
+  },
+  {
+    "label": "V19 Best Jockey",
+    "url": "/models/v19_best_jockey.onnx"
+  },
+  {
+    "label": "V21 Best Jockey",
+    "url": "/models/v21_best_jockey.onnx"
+  },
+  {
+    "label": "V22 Best Jockey",
+    "url": "/models/v22_best_jockey.onnx"
+  },
+  {
+    "label": "V23b Best Jockey",
+    "url": "/models/v23b_best_jockey.onnx"
+  },
+  {
+    "label": "V24 Best Jockey",
+    "url": "/models/v24_best_jockey.onnx"
+  },
+  {
+    "label": "V25b Best Jockey",
+    "url": "/models/v25b_best_jockey.onnx"
+  },
+  {
+    "label": "V26 Jockey",
+    "url": "/models/v26_jockey.onnx"
+  },
+  {
+    "label": "V28b Jockey",
+    "url": "/models/v28b_jockey.onnx"
+  },
+  {
+    "label": "V32 Jockey",
+    "url": "/models/v32_jockey.onnx"
+  },
+  {
+    "label": "V33c Jockey",
+    "url": "/models/v33c_jockey.onnx"
   }
 ]

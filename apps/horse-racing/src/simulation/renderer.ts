@@ -2,6 +2,7 @@ import { Container, Graphics } from 'pixi.js';
 import type { CurveSegment, StraightSegment, TrackSegment } from './track-types';
 
 import { TRACK_HALF_WIDTH, type Horse } from './types';
+import type { HorseFrame, RaceFrame } from './sim';
 
 const RAIL_COLOR = 0xcccccc;
 const RAIL_WIDTH = 2;
@@ -15,6 +16,28 @@ const HORSE_LENGTH = 2.0;
 const HORSE_WIDTH = 0.65;
 const PLAYER_OUTLINE_COLOR = 0xffff00;
 const PLAYER_OUTLINE_WIDTH = 0.25;
+const TRACE_WIDTH = 5;
+const TRACE_ALPHA = 0.65;
+const LIGHTEN = 0.55;
+const DARKEN = 0.55;
+
+function lightenColor(c: number, amount: number): number {
+    const r = (c >> 16) & 0xff, g = (c >> 8) & 0xff, b = c & 0xff;
+    return (
+        (Math.round(r + (255 - r) * amount) << 16) |
+        (Math.round(g + (255 - g) * amount) << 8) |
+        Math.round(b + (255 - b) * amount)
+    );
+}
+
+function darkenColor(c: number, amount: number): number {
+    const r = (c >> 16) & 0xff, g = (c >> 8) & 0xff, b = c & 0xff;
+    return (
+        (Math.round(r * (1 - amount)) << 16) |
+        (Math.round(g * (1 - amount)) << 8) |
+        Math.round(b * (1 - amount))
+    );
+}
 
 // ---- Geometry helpers ----
 
@@ -216,30 +239,125 @@ function drawHorse(color: number, isPlayer: boolean): Graphics {
  */
 export class RaceRenderer {
     private horseGfx = new Map<number, Graphics>();
+    private horseColors = new Map<number, number>();
+    private traceGfx = new Map<number, Graphics>();
+    private traceContainer: Container;
     private trackGfx: Graphics;
+    private lastTraceIdx = -1;
+    private lastTraceZoom = -1;
 
     constructor(private stage: Container, segments: TrackSegment[]) {
         this.trackGfx = drawTrack(segments);
         stage.addChild(this.trackGfx);
+        this.traceContainer = new Container();
+        stage.addChild(this.traceContainer);
     }
 
-    syncHorses(horses: Horse[], playerHorseId: number | null): void {
+    /**
+     * Sync horse sprites.
+     * @param rotations - Optional per-horse rotation overrides (from recorded
+     *   playback frames). When provided, skip the navigator lookup and use the
+     *   recorded angle directly — simpler and correct after seek scrubbing.
+     */
+    syncHorses(
+        horses: Horse[],
+        playerHorseId: number | null,
+        rotations?: Map<number, number>
+    ): void {
         for (const h of horses) {
             let gfx = this.horseGfx.get(h.id);
             if (!gfx) {
                 gfx = drawHorse(h.color, h.id === playerHorseId);
                 this.stage.addChild(gfx);
                 this.horseGfx.set(h.id, gfx);
+                this.horseColors.set(h.id, h.color);
             }
             gfx.position.set(h.pos.x, h.pos.y);
-            const frame = h.navigator.getTrackFrame(h.pos);
-            gfx.rotation = Math.atan2(frame.tangential.y, frame.tangential.x);
+            const recorded = rotations?.get(h.id);
+            if (recorded !== undefined) {
+                gfx.rotation = recorded;
+            } else {
+                const frame = h.navigator.getTrackFrame(h.pos);
+                gfx.rotation = Math.atan2(frame.tangential.y, frame.tangential.x);
+            }
         }
+    }
+
+    /**
+     * Draw position traces for all horses up to `frameIndex` (inclusive).
+     * Skips redraw when the index hasn't changed.
+     */
+    drawTraces(frames: RaceFrame[], frameIndex: number, zoomLevel = 1): void {
+        const endIdx = Math.min(frameIndex, frames.length - 1);
+        if (endIdx < 0) return;
+        if (endIdx === this.lastTraceIdx && zoomLevel === this.lastTraceZoom) return;
+        this.lastTraceIdx = endIdx;
+        this.lastTraceZoom = zoomLevel;
+
+        const horseCount = frames[0]?.horses.length ?? 0;
+
+        for (let hi = 0; hi < horseCount; hi++) {
+            const id = frames[0].horses[hi].id;
+            let g = this.traceGfx.get(id);
+            if (!g) {
+                g = new Graphics();
+                this.traceContainer.addChild(g);
+                this.traceGfx.set(id, g);
+            }
+            g.clear();
+
+            const baseColor = this.horseColors.get(id) ?? 0xffffff;
+            const lightColor = lightenColor(baseColor, LIGHTEN);
+            const darkColor = darkenColor(baseColor, DARKEN);
+
+            const w = TRACE_WIDTH / zoomLevel;
+            let prevHf = frames[0].horses[hi];
+            let runColor = baseColor;
+            let runStarted = false;
+
+            const flushRun = () => {
+                if (runStarted) {
+                    g!.stroke({ width: w, color: runColor, alpha: TRACE_ALPHA });
+                    runStarted = false;
+                }
+            };
+
+            for (let fi = 1; fi <= endIdx; fi++) {
+                const hf = frames[fi].horses[hi];
+                if (!hf) break;
+                const accel = hf.tVel - prevHf.tVel;
+                const segColor = accel > 0.001 ? lightColor : accel < -0.001 ? darkColor : baseColor;
+
+                if (segColor !== runColor && runStarted) {
+                    flushRun();
+                }
+                if (!runStarted) {
+                    g.moveTo(prevHf.x, prevHf.y);
+                    runColor = segColor;
+                    runStarted = true;
+                }
+                g.lineTo(hf.x, hf.y);
+                prevHf = hf;
+            }
+            flushRun();
+        }
+    }
+
+    clearTraces(): void {
+        for (const g of this.traceGfx.values()) {
+            g.clear();
+        }
+        this.lastTraceIdx = -1;
+        this.lastTraceZoom = -1;
     }
 
     dispose(): void {
         for (const g of this.horseGfx.values()) g.destroy();
         this.horseGfx.clear();
+        this.horseColors.clear();
+        for (const g of this.traceGfx.values()) g.destroy();
+        this.traceGfx.clear();
+        this.traceContainer.destroy();
         this.trackGfx.destroy();
     }
 }
