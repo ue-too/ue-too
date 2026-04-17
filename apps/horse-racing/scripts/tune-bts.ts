@@ -507,7 +507,12 @@ async function main(): Promise<void> {
     console.log(`\nResults saved to ${outPath}`);
 }
 
-main().catch(err => {
-    console.error(err);
-    process.exit(1);
-});
+// Only run main() when the file is executed directly (e.g. `bun run ...`).
+// Importing the module (from tests) must not trigger the search.
+// `import.meta.main` is true only for the entry module under Bun.
+if (import.meta.main) {
+    main().catch(err => {
+        console.error(err);
+        process.exit(1);
+    });
+}
