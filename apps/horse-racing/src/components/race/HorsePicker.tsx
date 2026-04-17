@@ -47,7 +47,10 @@ function btManifestEntries(): ModelEntry[] {
     }));
 }
 
-function readHorseModels(sim: V2SimHandle, horses: { id: number }[]): Record<number, string> {
+function readHorseModels(
+    sim: V2SimHandle,
+    horses: { id: number }[]
+): Record<number, string> {
     const out: Record<number, string> = {};
     for (const h of horses) {
         const url = sim.getHorseJockeyUrl(h.id);
@@ -60,9 +63,13 @@ export function HorsePicker({ sim, horses, btVersion }: Props): ReactNode {
     const [selected, setSelected] = useState<number | null>(null);
     const [onnxModels, setOnnxModels] = useState<ModelEntry[]>([]);
     const [tracks, setTracks] = useState<ModelEntry[]>([]);
-    const [currentTrack, setCurrentTrack] = useState<string>('/tracks/test_oval.json');
+    const [currentTrack, setCurrentTrack] = useState<string>(
+        '/tracks/test_oval.json'
+    );
     const [horseCount, setHorseCount] = useState(sim.getHorseCount());
-    const [horseModels, setHorseModels] = useState<Record<number, string>>(() => readHorseModels(sim, horses));
+    const [horseModels, setHorseModels] = useState<Record<number, string>>(() =>
+        readHorseModels(sim, horses)
+    );
     const [loadingHorse, setLoadingHorse] = useState<number | null>(null);
     const [loadingTrack, setLoadingTrack] = useState(false);
 
@@ -86,7 +93,10 @@ export function HorsePicker({ sim, horses, btVersion }: Props): ReactNode {
     }, []);
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    const models = useMemo(() => [...btManifestEntries(), ...onnxModels], [onnxModels, btVersion]);
+    const models = useMemo(
+        () => [...btManifestEntries(), ...onnxModels],
+        [onnxModels, btVersion]
+    );
 
     const onTrackChange = async (url: string) => {
         if (url === currentTrack) return;
@@ -123,9 +133,7 @@ export function HorsePicker({ sim, horses, btVersion }: Props): ReactNode {
     };
 
     const onAllHorsesModelChange = async (url: string) => {
-        const ids = horses
-            .filter(h => h.id !== selected)
-            .map(h => h.id);
+        const ids = horses.filter(h => h.id !== selected).map(h => h.id);
         if (ids.length === 0) return;
         setHorseModels(prev => {
             const next = { ...prev };
@@ -157,6 +165,30 @@ export function HorsePicker({ sim, horses, btVersion }: Props): ReactNode {
         setSelected(null);
         setHorseModels({});
         sim.setHorseCount(defaultCount);
+    };
+
+    const randomizeBts = async () => {
+        // Exclude the live workbench entry — it's a transient slot, not a
+        // real archetype. Built-ins and saved custom archetypes are fine.
+        const btIds = BT_ARCHETYPE_IDS.filter(id => !id.startsWith('~'));
+        if (btIds.length === 0) return;
+        const ids = horses.filter(h => h.id !== selected).map(h => h.id);
+        if (ids.length === 0) return;
+        const next: Record<number, string> = {};
+        for (const id of ids) {
+            const arch = btIds[Math.floor(Math.random() * btIds.length)];
+            next[id] = `bt://${arch}`;
+        }
+        setHorseModels(prev => ({ ...prev, ...next }));
+        try {
+            await Promise.all(
+                Object.entries(next).map(([idStr, url]) =>
+                    sim.setHorseJockeyUrl(Number(idStr), url)
+                )
+            );
+        } catch (err) {
+            console.error('Failed to randomize BTs:', err);
+        }
     };
 
     return (
@@ -216,6 +248,16 @@ export function HorsePicker({ sim, horses, btVersion }: Props): ReactNode {
                 >
                     Reset
                 </button>
+                <button
+                    onClick={randomizeBts}
+                    title="Assign a random BT archetype to each non-player horse"
+                    style={{
+                        ...mainSelectStyle,
+                        color: '#aaa',
+                    }}
+                >
+                    Randomize BTs
+                </button>
             </div>
 
             {/* Apply model to all horses at once (excluding player) */}
@@ -253,7 +295,14 @@ export function HorsePicker({ sim, horses, btVersion }: Props): ReactNode {
             {/* Per-horse model + pick buttons */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {horses.map(h => (
-                    <div key={h.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div
+                        key={h.id}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 8,
+                        }}
+                    >
                         <button
                             onClick={() => pick(h.id)}
                             aria-label={`Pick horse ${h.id + 1}`}
@@ -273,8 +322,12 @@ export function HorsePicker({ sim, horses, btVersion }: Props): ReactNode {
                         {models.length > 0 && (
                             <select
                                 value={horseModels[h.id] ?? ''}
-                                onChange={e => onHorseModelChange(h.id, e.target.value)}
-                                disabled={loadingHorse === h.id || selected === h.id}
+                                onChange={e =>
+                                    onHorseModelChange(h.id, e.target.value)
+                                }
+                                disabled={
+                                    loadingHorse === h.id || selected === h.id
+                                }
                                 style={{
                                     ...selectStyle,
                                     opacity: selected === h.id ? 0.4 : 1,
