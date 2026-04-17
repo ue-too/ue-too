@@ -172,8 +172,8 @@ function loadTestTrack(name: string) {
 }
 
 describe('runRace (smoke)', () => {
-    it('finishes a race on simple_oval with the starting archetype configs', async () => {
-        const segments = loadTestTrack('simple_oval');
+    it('finishes a race on test_oval with the starting archetype configs', async () => {
+        const segments = loadTestTrack('test_oval');
         const out = await runRace(segments, startingProposal(), 1);
         expect(out.finished).toBe(true);
         expect(out.finishOrder).toHaveLength(6);

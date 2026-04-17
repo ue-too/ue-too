@@ -32,7 +32,7 @@ export const ARCHETYPE_NAMES = [
 ] as const;
 export type ArchetypeName = (typeof ARCHETYPE_NAMES)[number];
 
-const TRACK_FILES = ['simple_oval', 'tokyo', 'kyoto'] as const;
+const TRACK_FILES = ['test_oval', 'tokyo', 'kyoto'] as const;
 type TrackName = (typeof TRACK_FILES)[number];
 
 const ITERS = 100;
@@ -245,7 +245,7 @@ export async function runRace(
 
 async function main(): Promise<void> {
     const tracks: Record<TrackName, TrackSegment[]> = {
-        simple_oval: loadTrack('simple_oval'),
+        test_oval: loadTrack('test_oval'),
         tokyo: loadTrack('tokyo'),
         kyoto: loadTrack('kyoto'),
     };
