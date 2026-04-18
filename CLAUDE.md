@@ -16,20 +16,18 @@ A toolkit for interactive HTML canvas applications.
 ## Commands
 
 ```bash
-bun install                  # Install dependencies
-bun test                     # Run tests (all packages, via Nx)
-bun run build                # Build all packages
-bun run build:apps           # Build all apps
-bun run build:affected       # Build only affected packages
-bun run dev:examples         # Dev server for examples
-bun run dev:banana           # Dev server for banana app
-bun run dev:horse-racing     # Dev server for horse-racing app
-bun run format               # Format with Prettier
-bun run format:check         # Check formatting
-bun run docs:build           # Generate TypeDoc docs for all packages
-bun run scaffold:package     # Scaffold a new package
-bun run scaffold:react       # Scaffold a new React app
-bun run scaffold:vue         # Scaffold a new Vue app
+bun install              # Install dependencies
+bun test                 # Run tests (all packages, via Nx)
+bun run build            # Build all packages
+bun run build:apps       # Build all apps
+bun run build:affected   # Build only affected packages
+bun run dev:examples     # Dev server for examples
+bun run format           # Format with Prettier
+bun run format:check     # Check formatting
+bun run docs:build       # Generate TypeDoc docs for all packages
+bun run scaffold:package # Scaffold a new package
+bun run scaffold:react   # Scaffold a new React app
+bun run scaffold:vue     # Scaffold a new Vue app
 ```
 
 ## Project Structure
@@ -59,13 +57,12 @@ packages/
 
 apps/
     examples/       — Interactive demos (https://ue-too.github.io/ue-too/)
-    banana/         — Railway simulation (WIP)
     blast/          — Tabletop game prototype maker (WIP)
-    knit/           — Knitting pattern editor (WIP)
-    horse-racing/   — Horse racing RL environment (WIP)
     board-react/    — React example app
     board-vue/      — Vue example app
 ```
+
+Graduated apps (now in their own repos): banana (https://github.com/ue-too/banana), knit, horse-racing.
 
 ## Standards
 
@@ -101,13 +98,13 @@ Conventional commits scoped to package or app:
 
 ```
 feat(math): add vector projection function
-fix(banana): resolve auto-driver signal handling
+fix(board): resolve rotation origin offset
 docs(animate): update README with new examples
 ```
 
 ### Branches
 
-`feat/`, `fix/`, `docs/`, `perf/` + descriptive name (e.g. `feat/banana-timetable`, `fix/board-rotation`)
+`feat/`, `fix/`, `docs/`, `perf/` + descriptive name (e.g. `feat/examples-navigation`, `fix/board-rotation`)
 
 ### PRs
 

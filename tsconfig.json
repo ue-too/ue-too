@@ -26,12 +26,6 @@
             "path": "./packages/curve"
         },
         {
-            "path": "./apps/banana"
-        },
-        {
-            "path": "./apps/horse-racing"
-        },
-        {
             "path": "./packages/ecs"
         },
         {
@@ -60,9 +54,6 @@
         },
         {
             "path": "./packages/board-game-engine"
-        },
-        {
-            "path": "./apps/knit"
         },
         {
             "path": "./packages/board-pixi-react-integration"
