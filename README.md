@@ -24,14 +24,14 @@
 
 ue-too is organized into modular packages:
 
-- [**`@ue-too/being`**](https://www.npmjs.com/package/@ue-too/being) <a href="https://www.npmjs.com/package/@ue-too/being"><img src="https://img.shields.io/npm/v/@ue-too/being.svg" alt="package being's npm version" style="vertical-align: middle"></a>  - Finite state machine 
-- [**`@ue-too/board`**](https://www.npmjs.com/package/@ue-too/board) <a href="https://www.npmjs.com/package/@ue-too/board"><img src="https://img.shields.io/npm/v/@ue-too/board.svg" alt="package board's npm version" style="vertical-align: middle"></a>  - Canvas viewport management with pan, zoom, and rotate functionality
-- [**`@ue-too/math`**](https://www.npmjs.com/package/@ue-too/math) <a href="https://www.npmjs.com/package/@ue-too/math"><img src="https://img.shields.io/npm/v/@ue-too/math.svg" alt="package math's npm version" style="vertical-align: middle"></a>  - Mathematical utilities for 2D point operations, transformations, and calculations
-- [**`@ue-too/animate`**](https://www.npmjs.com/package/@ue-too/animate) <a href="https://www.npmjs.com/package/@ue-too/animate"><img src="https://img.shields.io/npm/v/@ue-too/animate.svg" alt="package animate's npm version" style="vertical-align: middle"></a>  - Animation system for smooth transitions and keyframe animations
-- [**`@ue-too/dynamics`**](https://www.npmjs.com/package/@ue-too/dynamics) <a href="https://www.npmjs.com/package/@ue-too/dynamics"><img src="https://img.shields.io/npm/v/@ue-too/dynamics.svg" alt="package dynamics's npm version" style="vertical-align: middle"></a>  - 2D physics engine with collision detection, rigid bodies, and constraints
-- [**`@ue-too/curve`**](https://www.npmjs.com/package/@ue-too/curve) <img src="https://img.shields.io/npm/v/@ue-too/curve.svg" alt="package curve's npm version" style="vertical-align: middle">  - Curve and path tools including Bézier curves, lines, and composite paths
-- [**`@ue-too/border`**](https://www.npmjs.com/package/@ue-too/border) <a href="https://www.npmjs.com/package/@ue-too/border"><img src="https://img.shields.io/npm/v/@ue-too/border.svg" alt="package border's npm version" style="vertical-align: middle"></a>  - Geographic projection utilities (great circle, rhumb line, map projections)
-- [**`@ue-too/ecs`**](https://www.npmjs.com/package/@ue-too/ecs) <a href="https://www.npmjs.com/package/@ue-too/ecs"><img src="https://img.shields.io/npm/v/@ue-too/ecs.svg" alt="package ecs's npm version" style="vertical-align: middle"></a>  - Entity Component System architecture support
+- [**`@ue-too/being`**](https://www.npmjs.com/package/@ue-too/being) <a href="https://www.npmjs.com/package/@ue-too/being"><img src="https://img.shields.io/npm/v/@ue-too/being.svg" alt="package being's npm version" style="vertical-align: middle"></a> - Finite state machine
+- [**`@ue-too/board`**](https://www.npmjs.com/package/@ue-too/board) <a href="https://www.npmjs.com/package/@ue-too/board"><img src="https://img.shields.io/npm/v/@ue-too/board.svg" alt="package board's npm version" style="vertical-align: middle"></a> - Canvas viewport management with pan, zoom, and rotate functionality
+- [**`@ue-too/math`**](https://www.npmjs.com/package/@ue-too/math) <a href="https://www.npmjs.com/package/@ue-too/math"><img src="https://img.shields.io/npm/v/@ue-too/math.svg" alt="package math's npm version" style="vertical-align: middle"></a> - Mathematical utilities for 2D point operations, transformations, and calculations
+- [**`@ue-too/animate`**](https://www.npmjs.com/package/@ue-too/animate) <a href="https://www.npmjs.com/package/@ue-too/animate"><img src="https://img.shields.io/npm/v/@ue-too/animate.svg" alt="package animate's npm version" style="vertical-align: middle"></a> - Animation system for smooth transitions and keyframe animations
+- [**`@ue-too/dynamics`**](https://www.npmjs.com/package/@ue-too/dynamics) <a href="https://www.npmjs.com/package/@ue-too/dynamics"><img src="https://img.shields.io/npm/v/@ue-too/dynamics.svg" alt="package dynamics's npm version" style="vertical-align: middle"></a> - 2D physics engine with collision detection, rigid bodies, and constraints
+- [**`@ue-too/curve`**](https://www.npmjs.com/package/@ue-too/curve) <img src="https://img.shields.io/npm/v/@ue-too/curve.svg" alt="package curve's npm version" style="vertical-align: middle"> - Curve and path tools including Bézier curves, lines, and composite paths
+- [**`@ue-too/border`**](https://www.npmjs.com/package/@ue-too/border) <a href="https://www.npmjs.com/package/@ue-too/border"><img src="https://img.shields.io/npm/v/@ue-too/border.svg" alt="package border's npm version" style="vertical-align: middle"></a> - Geographic projection utilities (great circle, rhumb line, map projections)
+- [**`@ue-too/ecs`**](https://www.npmjs.com/package/@ue-too/ecs) <a href="https://www.npmjs.com/package/@ue-too/ecs"><img src="https://img.shields.io/npm/v/@ue-too/ecs.svg" alt="package ecs's npm version" style="vertical-align: middle"></a> - Entity Component System architecture support
 
 ## Install Individual Packages
 
@@ -131,12 +131,17 @@ ue-too/
 │   └── ecs/                          # Entity Component System
 ├── apps/                             # Example applications
 │   ├── examples/                     # Interactive examples
-│   ├── banana/                       # A simulation of a railway system using bezier curves. (WIP)
-│   ├── blast/                        # A tabletop game prototype maker. (WIP)
-│   ├── knit/                         # A knitting pattern editor. (WIP)
-│   └── horse-racing/                 # Horse racing canvas prototype. (WIP)
+│   └── blast/                        # A tabletop game prototype maker. (WIP)
 └── scripts/                          # Build and deployment scripts
 ```
+
+### Graduated Apps
+
+Some apps that started in this monorepo have moved to their own repositories once they stabilized:
+
+- **banana** (railway simulator) → [github.com/ue-too/banana](https://github.com/ue-too/banana)
+- **knit** (knitting pattern editor) → moved to a private repository
+- **horse-racing** (RL environment) → moved to a private repository
 
 ## License
 

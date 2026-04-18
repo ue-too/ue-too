@@ -1,1 +1,0 @@
-export { BananaToolbar } from './toolbar';
