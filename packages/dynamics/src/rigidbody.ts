@@ -233,17 +233,23 @@ export abstract class BaseRigidBody implements RigidBody {
             this._angularVelocity += angularDamping;
         }
         this._orientationAngle += this._angularVelocity * deltaTime;
+        // Static-friction-like clamp: if the pending impulse would overshoot
+        // the current velocity (i.e. the body would "reverse" in one step),
+        // zero the velocity so it doesn't. Only meaningful when friction is
+        // enabled — without friction this creates a stable fixed point at
+        // |v| = |F*dt/m| where the body gets pinned each step.
         if (
+            this.frictionEnabled &&
             PointCal.magnitude({
                 x: this._linearVelocity.x,
                 y: this._linearVelocity.y,
             }) <
-            PointCal.magnitude(
-                PointCal.divideVectorByScalar(
-                    PointCal.multiplyVectorByScalar(this.force, deltaTime),
-                    this.mass
+                PointCal.magnitude(
+                    PointCal.divideVectorByScalar(
+                        PointCal.multiplyVectorByScalar(this.force, deltaTime),
+                        this.mass
+                    )
                 )
-            )
         ) {
             if (this._linearVelocity.z != undefined) {
                 this._linearVelocity = {
