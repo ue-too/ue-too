@@ -2,7 +2,6 @@ import type { EventArgs, EventResult } from '@ue-too/being';
 
 import type {
     KmtInputEventMapping,
-    KmtInputStateMachine,
 } from '../../input-interpretation/input-state-machine';
 import type { InputOrchestrator } from '../input-orchestrator';
 
@@ -170,7 +169,7 @@ export class VanillaKMTEventParser implements KMTEventParser {
     private _orchestrator: InputOrchestrator;
     private _keyfirstPressed: Map<string, boolean>;
     private _abortController: AbortController;
-    private _canvas?: HTMLCanvasElement | SVGSVGElement;
+    protected _canvas?: HTMLCanvasElement | SVGSVGElement;
 
     constructor(
         kmtInputStateMachine: StateMachine,
@@ -247,7 +246,7 @@ export class VanillaKMTEventParser implements KMTEventParser {
         this.keyupHandler = this.keyupHandler.bind(this);
     }
 
-    private processEvent<K extends keyof KmtInputEventMapping>(
+    protected processEvent<K extends keyof KmtInputEventMapping>(
         ...args: EventArgs<KmtInputEventMapping, K>
     ): void {
         const result = this._stateMachine.happens(...args);
