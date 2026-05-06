@@ -128,6 +128,48 @@ describe('Polygon Rigidbody', () => {
         expect(polygon.center.y).toBeGreaterThan(0);
     });
 
+    test('Polygon accelerates past |F*dt/m| when friction is disabled', () => {
+        // Regression: prior to the fix, the static-friction-like clamp ran
+        // even with frictionEnabled=false. If force ramps up (e.g. through
+        // a first-order lag on a controller input), the check |v| < |F*dt/m|
+        // fires every step and pins velocity at ~|F_target*dt/m| indefinitely
+        // — the body "stalls" instead of accelerating.
+        const vertices = [
+            { x: 1, y: 1 },
+            { x: -1, y: 1 },
+            { x: -1, y: -1 },
+            { x: 1, y: -1 },
+        ];
+        const polygon = new Polygon(
+            { x: 0, y: 0 },
+            vertices,
+            0,
+            500,
+            false,
+            false
+        );
+        const dt = 1 / 240;
+        const tau = 0.15;
+        const Fx_target = 14480;
+        const Fy_target = -486;
+        let Fx = 0;
+        let Fy = 0;
+
+        for (let i = 0; i < 500; i++) {
+            Fx += ((Fx_target - Fx) * dt) / tau;
+            Fy += ((Fy_target - Fy) * dt) / tau;
+            polygon.applyForce({ x: Fx, y: Fy });
+            polygon.step(dt);
+        }
+
+        const vPinned = Math.hypot(Fx_target, Fy_target) * (dt / 500); // ~0.121 m/s
+        const vmag = Math.hypot(
+            polygon.linearVelocity.x,
+            polygon.linearVelocity.y
+        );
+        expect(vmag).toBeGreaterThan(vPinned * 5);
+    });
+
     test('Polygon getMinMaxProjection', () => {
         const vertices = [
             { x: 10, y: 0 },
