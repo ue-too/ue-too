@@ -15,7 +15,9 @@
 </div>
 
 <p align="center">
-  <a href="#quick-demo">Quick Demo</a> •
+  <a href="#examples">Examples</a> •
+  <a href="#quick-coding-demo">Quick Coding Demo</a> •
+  <a href="https://ue-too.github.io/documentation/board/">Documentation</a> •
   <a href="#installation-and-usage">Install</a> •
   <a href="#key-features">Key Features</a> •
   <a href="#quick-start-html-canvas">Quick Start</a> •
@@ -46,21 +48,32 @@
 - A complete drawing application like Excalidraw or tldraw
 - A full-featured package with built-in drawing tools and user interfaces
 
-## Motivation
+## Examples
 
-Consider this scenario:
+A live website containing the examples is available [here](https://ue-too.github.io/ue-too/).
 
-You're building a web application that allows users to draw on a canvas. You have your pen and eraser tools ready. During testing, you notice that users need to zoom in to work on fine details. After implementing zoom functionality, you realize users can't see other parts of the drawing when zoomed in, necessitating a pan feature.
+This monorepo includes comprehensive examples demonstrating various packages and integrations:
 
-As you add these features, the code becomes increasingly complex, especially when handling different input methods (mouse, touch, trackpad). This is where `ue-too` comes in - it handles all the panning and zooming logic, allowing you to focus on your application's core functionality.
+### Core Examples
 
-Even if you're not building a drawing app, `ue-too` is useful for any canvas that requires panning functionality. It works with various frameworks including pixi.js, fabric.js, Konva, vanilla JavaScript canvas API, and even headless canvas in Node.js.
+- [**Base Example**](https://ue-too.github.io/ue-too/base/) - Basic canvas viewport with pan, zoom, and rotate
+- [**Attach / Detach Example**](https://ue-too.github.io/ue-too/attach-detach/) - Dynamically attach and detach a canvas from the board
+- [**Navigation Example**](https://ue-too.github.io/ue-too/navigation/) - Keyboard-driven camera panning via `panByViewPort()`
+- [**Ruler Example**](https://ue-too.github.io/ue-too/ruler/) - Measurement ruler overlay that updates with pan and zoom
+- [**Camera Animation**](https://ue-too.github.io/ue-too/camera-animation/) - Smooth animated camera transitions on click
+- [**Image Example**](https://ue-too.github.io/ue-too/image-example/) - Upload and display an image on the pannable canvas
+- [**SVG Example**](https://ue-too.github.io/ue-too/svg/) - Board camera system applied to SVG elements
 
-## Quick Demo
+### Framework Integrations
 
-[Stackblitz example link](https://stackblitz.com/edit/vitejs-vite-jpxrtxzg?file=index.html): This example demonstrates the basic functionality shown in the [Quick Start](#quick-start-using-only-html-canvas) section.
+- [**PixiJS Integration**](https://ue-too.github.io/ue-too/pixi-integration/) - Full-screen PixiJS canvas with board camera controls
+- [**Konva Integration**](https://ue-too.github.io/ue-too/konva-integration/) - Konva.js stage synchronized with board camera transforms
+- [**Fabric Integration**](https://ue-too.github.io/ue-too/fabric-integration/) - Fabric.js with toggleable movement/selection modes
 
-Additional examples in the [`devserver`](https://github.com/niuee/board/tree/main/devserver) directory show integration with pixi.js, fabric.js, and Konva (incomplete but providing general implementation guidance).
+
+## Documentation
+
+The documentation is available [here](https://ue-too.github.io/documentation/board/).
 
 ## Installation and Usage
 
@@ -113,6 +126,9 @@ function draw(timestamp) {
 // call the draw function every frame
 requestAnimationFrame(draw);
 ```
+### Stackblitz Example to try out the library
+
+[Stackblitz example link](https://stackblitz.com/edit/vitejs-vite-jpxrtxzg?file=index.html): This example demonstrates the basic functionality shown in the [Quick Start (HTML Canvas)](#quick-start-html-canvas) section.
 
 ### Default Input Controls
 
@@ -128,9 +144,9 @@ Zoom:
 - Trackpad: Two-finger pinch
 - Touch: Two-finger pinch
 
-### Important Notes
+### A Few Things to Note
 
-- All drawing operations should be performed in the `requestAnimationFrame` callback after the `step` function
+- All drawing operations should be performed in the `requestAnimationFrame` callback after the `step` function of the `Board` class instance is called, the `step` function clears the canvas.
 - The `Board` class is designed for minimal setup but offers less flexibility
 - For more customization, refer to the [Under the Hood](#under-the-hood) section
 
@@ -152,8 +168,8 @@ For detailed camera control information, refer to the [Board Camera](https://git
 
 Please refer to the [README](https://github.com/ue-too/ue-too/) in the root directory for the overall development setup.
 
-1. This package is within a monorepo, and is managed by nx and pnpm. I am not super familiar with nx or monorepo; this is kind of an experiment and a learning experience for me. (if you have any suggestions on how to improve the setup, please let me know!)
-2. Bundling the package is done through rollup and testing through jest.
+1. This package is within a monorepo, and is managed by nx and bun. I am not super familiar with nx or monorepo; this is kind of an experiment and a learning experience for me as well. (if you have any suggestions on how to improve the setup, please let me know!)
+2. Bundling the package is done through rollup and testing through bun test.
 
 ## Under the Hood
 
