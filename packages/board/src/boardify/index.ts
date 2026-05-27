@@ -369,7 +369,6 @@ export default class Board {
         );
 
         if (canvas != undefined) {
-            console.log('canvas exists on creation of board');
             this.attach(canvas, debug);
         }
     }

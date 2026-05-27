@@ -332,18 +332,6 @@ export class CanvasProxy implements Canvas, Observable<[CanvasDimensions]> {
         this._canvasPositionDimensionPublisher.attach(canvas);
     }
 
-    logCanvasTrueSize() {
-        if (this._canvas === undefined) {
-            return;
-        }
-        console.log('canvas true size');
-        console.log('style width', this._canvas.style.width);
-        console.log('style height', this._canvas.style.height);
-        console.log('width', this._canvas.width);
-        console.log('height', this._canvas.height);
-        console.log('proxy width', this._width);
-        console.log('proxy height', this._height);
-    }
 }
 
 export class SvgProxy implements Canvas, Observable<[CanvasDimensions]> {
@@ -484,18 +472,6 @@ export class SvgProxy implements Canvas, Observable<[CanvasDimensions]> {
         });
     }
 
-    logCanvasTrueSize() {
-        if (this._svg === undefined) {
-            return;
-        }
-        console.log('canvas true size');
-        console.log('style width', this._svg.style.width);
-        console.log('style height', this._svg.style.height);
-        console.log('width', this._svg.width);
-        console.log('height', this._svg.height);
-        console.log('proxy width', this._width);
-        console.log('proxy height', this._height);
-    }
 }
 
 /**
