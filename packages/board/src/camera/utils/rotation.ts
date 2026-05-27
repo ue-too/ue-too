@@ -89,7 +89,6 @@ export function clampRotation(
     ) {
         // ccw out of bounds
         if (Math.abs(angleSpanFromStart) === Math.abs(angleSpanFromEnd)) {
-            // console.log("tie", "start:", rotationLimits.start, "end:", rotationLimits.end, "rotation:", rotation);
             return rotationLimits.startAsTieBreaker
                 ? rotationLimits.start
                 : rotationLimits.end;

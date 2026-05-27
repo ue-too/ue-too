@@ -338,7 +338,6 @@ export class VanillaKMTEventParser implements KMTEventParser {
     }
 
     keypressHandler(e: KeyboardEvent) {
-        console.log('keypressHandler', e.key);
         if (e.target !== document.body) {
             return;
         }
@@ -350,7 +349,6 @@ export class VanillaKMTEventParser implements KMTEventParser {
             this.processEvent('spacebarDown');
         }
         if (e.key === 'Escape') {
-            console.log('escape key pressed');
             this.processEvent('escapeKey');
         }
         if (e.key === 'ArrowUp') {
