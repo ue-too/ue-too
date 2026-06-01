@@ -933,6 +933,41 @@ export default class Board {
         this._observableInputTracker.setMode(mode);
     }
 
+    /**
+     * The current input modality.
+     *
+     * @returns `'kmt'` (keyboard-mouse), `'trackpad'`, or `'TBD'` when
+     * auto-detection is active and has not yet committed to a mode.
+     */
+    get inputMode(): 'kmt' | 'trackpad' | 'TBD' {
+        return this._observableInputTracker.mode;
+    }
+
+    /**
+     * Flips the input mode between keyboard-mouse and trackpad and locks it,
+     * disabling auto-detection.
+     *
+     * From `'kmt'` this switches to `'trackpad'`; from `'trackpad'` or `'TBD'`
+     * it switches to `'kmt'`. (`'TBD'` already behaves like trackpad, so the
+     * natural "other" mode to toggle into is `'kmt'`.)
+     *
+     * @see {@link setInputMode} to set a specific mode, and
+     * {@link enableAutoInputMode} to return to auto-detection.
+     */
+    toggleInputMode(): void {
+        this.setInputMode(this.inputMode === 'kmt' ? 'trackpad' : 'kmt');
+    }
+
+    /**
+     * Returns the board to auto-detection of input modality after a manual lock
+     * set via {@link setInputMode} or {@link toggleInputMode}.
+     *
+     * The mode reverts to `'TBD'` until auto-detection commits to a mode.
+     */
+    enableAutoInputMode(): void {
+        this._observableInputTracker.enableInputModeDetection();
+    }
+
     onCanvasDimensionChange(callback: (dimensions: CanvasDimensions) => void) {
         return this._canvasProxy.subscribe(callback);
     }
