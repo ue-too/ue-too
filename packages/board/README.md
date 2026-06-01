@@ -8,8 +8,8 @@
 <div align="center">
 
 [![npm version](https://img.shields.io/npm/v/@ue-too/board.svg?style=for-the-badge)](https://www.npmjs.com/package/@ue-too/board)
-[![ci tests](https://img.shields.io/github/actions/workflow/status/ue-too/ue-too/ci-test.yml?label=test&style=for-the-badge)](https://github.com/ue-too/ue-too/actions/workflows/ci-test.yml)
-[![License](https://img.shields.io/github/license/ue-too/ue-too?style=for-the-badge)](https://github.com/ue-too/ue-too/blob/main/LICENSE.txt)
+[![ci tests](https://img.shields.io/github/actions/workflow/status/ue-too/ue-too/ci-test.yml?label=test&style=for-the-badge)](https://github.com/kinnet-studio/ue-too/actions/workflows/ci-test.yml)
+[![License](https://img.shields.io/github/license/ue-too/ue-too?style=for-the-badge)](https://github.com/kinnet-studio/ue-too/blob/main/LICENSE.txt)
 [![bundle size](https://img.shields.io/bundlephobia/minzip/@ue-too/board?color=success&label=gzipped%20bundle%20size&style=for-the-badge)](https://bundlephobia.com/package/@ue-too/board)
 
 </div>
@@ -17,7 +17,7 @@
 <p align="center">
   <a href="#examples">Examples</a> •
   <a href="#quick-coding-demo">Quick Coding Demo</a> •
-  <a href="https://ue-too.github.io/documentation/board/">Documentation</a> •
+  <a href="https://kinnet-studio.github.io/documentation/board/">Documentation</a> •
   <a href="#installation-and-usage">Install</a> •
   <a href="#key-features">Key Features</a> •
   <a href="#quick-start-html-canvas">Quick Start</a> •
@@ -25,7 +25,7 @@
   <a href="#under-the-hood">Basic API Overview</a>
 </p>
 
-![small-demo](https://ue-too.github.io/ue-too/assets/doc-media/small-demo-with-cursor.gif)
+![small-demo](https://kinnet-studio.github.io/ue-too/assets/doc-media/small-demo-with-cursor.gif)
 
 <p align="center">
     A demonstration of uē-tôo's core functionality.
@@ -50,30 +50,30 @@
 
 ## Examples
 
-A live website containing the examples is available [here](https://ue-too.github.io/ue-too/).
+A live website containing the examples is available [here](https://kinnet-studio.github.io/ue-too/).
 
 This monorepo includes comprehensive examples demonstrating various packages and integrations:
 
 ### Core Examples
 
-- [**Base Example**](https://ue-too.github.io/ue-too/base/) - Basic canvas viewport with pan, zoom, and rotate
-- [**Attach / Detach Example**](https://ue-too.github.io/ue-too/attach-detach/) - Dynamically attach and detach a canvas from the board
-- [**Navigation Example**](https://ue-too.github.io/ue-too/navigation/) - Keyboard-driven camera panning via `panByViewPort()`
-- [**Ruler Example**](https://ue-too.github.io/ue-too/ruler/) - Measurement ruler overlay that updates with pan and zoom
-- [**Camera Animation**](https://ue-too.github.io/ue-too/camera-animation/) - Smooth animated camera transitions on click
-- [**Image Example**](https://ue-too.github.io/ue-too/image-example/) - Upload and display an image on the pannable canvas
-- [**SVG Example**](https://ue-too.github.io/ue-too/svg/) - Board camera system applied to SVG elements
+- [**Base Example**](https://kinnet-studio.github.io/ue-too/base/) - Basic canvas viewport with pan, zoom, and rotate
+- [**Attach / Detach Example**](https://kinnet-studio.github.io/ue-too/attach-detach/) - Dynamically attach and detach a canvas from the board
+- [**Navigation Example**](https://kinnet-studio.github.io/ue-too/navigation/) - Keyboard-driven camera panning via `panByViewPort()`
+- [**Ruler Example**](https://kinnet-studio.github.io/ue-too/ruler/) - Measurement ruler overlay that updates with pan and zoom
+- [**Camera Animation**](https://kinnet-studio.github.io/ue-too/camera-animation/) - Smooth animated camera transitions on click
+- [**Image Example**](https://kinnet-studio.github.io/ue-too/image-example/) - Upload and display an image on the pannable canvas
+- [**SVG Example**](https://kinnet-studio.github.io/ue-too/svg/) - Board camera system applied to SVG elements
 
 ### Framework Integrations
 
-- [**PixiJS Integration**](https://ue-too.github.io/ue-too/pixi-integration/) - Full-screen PixiJS canvas with board camera controls
-- [**Konva Integration**](https://ue-too.github.io/ue-too/konva-integration/) - Konva.js stage synchronized with board camera transforms
-- [**Fabric Integration**](https://ue-too.github.io/ue-too/fabric-integration/) - Fabric.js with toggleable movement/selection modes
+- [**PixiJS Integration**](https://kinnet-studio.github.io/ue-too/pixi-integration/) - Full-screen PixiJS canvas with board camera controls
+- [**Konva Integration**](https://kinnet-studio.github.io/ue-too/konva-integration/) - Konva.js stage synchronized with board camera transforms
+- [**Fabric Integration**](https://kinnet-studio.github.io/ue-too/fabric-integration/) - Fabric.js with toggleable movement/selection modes
 
 
 ## Documentation
 
-The documentation is available [here](https://ue-too.github.io/documentation/board/).
+The documentation is available [here](https://kinnet-studio.github.io/documentation/board/).
 
 ## Installation and Usage
 
@@ -158,7 +158,7 @@ The `Board` class handles:
 
 All components and utility functions are accessible, allowing you to create your own board implementation without using the `requestAnimationFrame` callback method.
 
-For detailed camera control information, refer to the [Board Camera](https://github.com/ue-too/ue-too/tree/main/packages/board/src/camera) section.
+For detailed camera control information, refer to the [Board Camera](https://github.com/kinnet-studio/ue-too/tree/main/packages/board/src/camera) section.
 
 ## Development
 
@@ -166,7 +166,7 @@ For detailed camera control information, refer to the [Board Camera](https://git
 
 > Currently not ready for contribution. If you have any suggestions or ideas, please let me know by creating an issue.
 
-Please refer to the [README](https://github.com/ue-too/ue-too/) in the root directory for the overall development setup.
+Please refer to the [README](https://github.com/kinnet-studio/ue-too/) in the root directory for the overall development setup.
 
 1. This package is within a monorepo, and is managed by nx and bun. I am not super familiar with nx or monorepo; this is kind of an experiment and a learning experience for me as well. (if you have any suggestions on how to improve the setup, please let me know!)
 2. Bundling the package is done through rollup and testing through bun test.
@@ -181,11 +181,11 @@ ue-too consists of 3 core components:
 
 To see detail of each component navigate to the respective readme in the subdirectories.
 
-- [Board Camera](https://github.com/ue-too/ue-too/tree/main/packages/board/src/camera)
-- [Camera Mux](https://github.com/ue-too/ue-too/tree/main/packages/board/src/camera/camera-mux)
-- [User Input Interpreter](https://github.com/ue-too/ue-too/tree/main/packages/board/src/input-interpretation)
+- [Board Camera](https://github.com/kinnet-studio/ue-too/tree/main/packages/board/src/camera)
+- [Camera Mux](https://github.com/kinnet-studio/ue-too/tree/main/packages/board/src/camera/camera-mux)
+- [User Input Interpreter](https://github.com/kinnet-studio/ue-too/tree/main/packages/board/src/input-interpretation)
 
-It's recommended to start with the [Board Camera](https://github.com/ue-too/ue-too/tree/main/packages/board/src/camera) since the other parts are built on top of it.
+It's recommended to start with the [Board Camera](https://github.com/kinnet-studio/ue-too/tree/main/packages/board/src/camera) since the other parts are built on top of it.
 
 Below is a diagram showing the data flow from user input to camera updates.
 

@@ -28,14 +28,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ue-too/ue-too.git"
+    "url": "git+https://github.com/kinnet-studio/ue-too.git"
   },
   "author": "niuee",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/ue-too/ue-too/issues"
+    "url": "https://github.com/kinnet-studio/ue-too/issues"
   },
-  "homepage": "https://github.com/ue-too/ue-too#readme",
+  "homepage": "https://github.com/kinnet-studio/ue-too#readme",
   "devDependencies": {
     "@changesets/cli": "^2.29.7",
     "@nx/devkit": "22.2.0",

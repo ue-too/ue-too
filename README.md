@@ -14,7 +14,7 @@
 
 <p align="center">
   <a href="#overview">Overview</a> •
-  <a href="https://ue-too.github.io/documentation/">Documentation</a> •
+  <a href="https://kinnet-studio.github.io/documentation/">Documentation</a> •
   <a href="#packages">Packages</a> •
   <a href="#examples">Examples</a> •
   <a href="#development">Development</a>
@@ -42,29 +42,29 @@ npm install @ue-too/board @ue-too/math @ue-too/animate
 
 ## Examples
 
-A live website containing the examples is available [here](https://ue-too.github.io/ue-too/).
+A live website containing the examples is available [here](https://kinnet-studio.github.io/ue-too/).
 
 This monorepo includes comprehensive examples demonstrating various packages and integrations:
 
 ### Core Examples
 
-- [**Base Example**](https://ue-too.github.io/ue-too/base/) - Basic canvas viewport with pan, zoom, and rotate
-- [**Attach / Detach Example**](https://ue-too.github.io/ue-too/attach-detach/) - Dynamically attach and detach a canvas from the board
-- [**Navigation Example**](https://ue-too.github.io/ue-too/navigation/) - Keyboard-driven camera panning via `panByViewPort()`
-- [**Ruler Example**](https://ue-too.github.io/ue-too/ruler/) - Measurement ruler overlay that updates with pan and zoom
-- [**Camera Animation**](https://ue-too.github.io/ue-too/camera-animation/) - Smooth animated camera transitions on click
-- [**Image Example**](https://ue-too.github.io/ue-too/image-example/) - Upload and display an image on the pannable canvas
-- [**SVG Example**](https://ue-too.github.io/ue-too/svg/) - Board camera system applied to SVG elements
+- [**Base Example**](https://kinnet-studio.github.io/ue-too/base/) - Basic canvas viewport with pan, zoom, and rotate
+- [**Attach / Detach Example**](https://kinnet-studio.github.io/ue-too/attach-detach/) - Dynamically attach and detach a canvas from the board
+- [**Navigation Example**](https://kinnet-studio.github.io/ue-too/navigation/) - Keyboard-driven camera panning via `panByViewPort()`
+- [**Ruler Example**](https://kinnet-studio.github.io/ue-too/ruler/) - Measurement ruler overlay that updates with pan and zoom
+- [**Camera Animation**](https://kinnet-studio.github.io/ue-too/camera-animation/) - Smooth animated camera transitions on click
+- [**Image Example**](https://kinnet-studio.github.io/ue-too/image-example/) - Upload and display an image on the pannable canvas
+- [**SVG Example**](https://kinnet-studio.github.io/ue-too/svg/) - Board camera system applied to SVG elements
 
 ### Framework Integrations
 
-- [**PixiJS Integration**](https://ue-too.github.io/ue-too/pixi-integration/) - Full-screen PixiJS canvas with board camera controls
-- [**Konva Integration**](https://ue-too.github.io/ue-too/konva-integration/) - Konva.js stage synchronized with board camera transforms
-- [**Fabric Integration**](https://ue-too.github.io/ue-too/fabric-integration/) - Fabric.js with toggleable movement/selection modes
+- [**PixiJS Integration**](https://kinnet-studio.github.io/ue-too/pixi-integration/) - Full-screen PixiJS canvas with board camera controls
+- [**Konva Integration**](https://kinnet-studio.github.io/ue-too/konva-integration/) - Konva.js stage synchronized with board camera transforms
+- [**Fabric Integration**](https://kinnet-studio.github.io/ue-too/fabric-integration/) - Fabric.js with toggleable movement/selection modes
 
 ### Advanced Features
 
-- [**Physics Example**](https://ue-too.github.io/ue-too/physics/) - Four-bar linkage with rigid body physics and constraints
+- [**Physics Example**](https://kinnet-studio.github.io/ue-too/physics/) - Four-bar linkage with rigid body physics and constraints
 
 ### Running Examples
 
@@ -72,7 +72,7 @@ To run the examples locally:
 
 ```bash
 # Clone the repository
-git clone https://github.com/ue-too/ue-too.git
+git clone https://github.com/kinnet-studio/ue-too.git
 cd ue-too
 
 # Install dependencies
@@ -94,7 +94,7 @@ Then, visit `http://localhost:5173` to explore all examples.
 
 ```bash
 # Clone and install
-git clone https://github.com/ue-too/ue-too.git
+git clone https://github.com/kinnet-studio/ue-too.git
 cd ue-too
 bun install
 
@@ -139,7 +139,7 @@ ue-too/
 
 Some apps that started in this monorepo have moved to their own repositories once they stabilized:
 
-- **banana** (railway simulator) → [github.com/ue-too/banana](https://github.com/ue-too/banana)
+- **banana** (railway simulator) → [github.com/kinnet-studio/banana](https://github.com/kinnet-studio/banana)
 - **knit** (knitting pattern editor) → moved to a private repository
 - **horse-racing** (RL environment) → moved to a private repository
 
@@ -149,6 +149,6 @@ MIT License - see [LICENSE.txt](LICENSE.txt) for details.
 
 ## Support
 
-- [GitHub Issues](https://github.com/ue-too/ue-too/issues) - Bug reports and feature requests
+- [GitHub Issues](https://github.com/kinnet-studio/ue-too/issues) - Bug reports and feature requests
 
 > Currently not accepting contributions yet. If there's any features you want to see, please let me know by creating an issue.

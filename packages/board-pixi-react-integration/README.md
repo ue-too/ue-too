@@ -3,7 +3,7 @@
 Description of the board-pixi-react-integration package.
 
 [![npm version](https://img.shields.io/npm/v/@ue-too/board-pixi-react-integration.svg)](https://www.npmjs.com/package/@ue-too/board-pixi-react-integration)
-[![license](https://img.shields.io/npm/l/@ue-too/board-pixi-react-integration.svg)](https://github.com/ue-too/ue-too/blob/main/LICENSE.txt)
+[![license](https://img.shields.io/npm/l/@ue-too/board-pixi-react-integration.svg)](https://github.com/kinnet-studio/ue-too/blob/main/LICENSE.txt)
 
 ## Overview
 
@@ -37,4 +37,4 @@ MIT
 
 ## Repository
 
-[https://github.com/ue-too/ue-too](https://github.com/ue-too/ue-too)
+[https://github.com/kinnet-studio/ue-too](https://github.com/kinnet-studio/ue-too)
