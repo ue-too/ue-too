@@ -8,7 +8,7 @@
 <div align="center">
 
 [![npm version](https://img.shields.io/npm/v/@ue-too/math.svg?style=for-the-badge)](https://www.npmjs.com/package/@ue-too/math)
-[![License](https://img.shields.io/github/license/ue-too/ue-too?style=for-the-badge)](https://github.com/ue-too/ue-too/blob/main/LICENSE.txt)
+[![License](https://img.shields.io/github/license/ue-too/ue-too?style=for-the-badge)](https://github.com/kinnet-studio/ue-too/blob/main/LICENSE.txt)
 
 </div>
 
@@ -210,7 +210,7 @@ const currentPos = PointCal.linearInterpolation(start, end, progress);
 For complete API documentation with detailed examples, see:
 
 - [Full TypeDoc Documentation](/math/) (generated from source)
-- [Source Code](https://github.com/ue-too/ue-too/blob/main/packages/math/src/index.ts) with inline JSDoc comments
+- [Source Code](https://github.com/kinnet-studio/ue-too/blob/main/packages/math/src/index.ts) with inline JSDoc comments
 
 ## TypeScript Support
 
@@ -252,8 +252,8 @@ const unit = PointCal.divideVectorByScalar(vector, mag);
 
 ## License
 
-MIT License - see [LICENSE.txt](https://github.com/ue-too/ue-too/blob/main/LICENSE.txt) for details.
+MIT License - see [LICENSE.txt](https://github.com/kinnet-studio/ue-too/blob/main/LICENSE.txt) for details.
 
 ## Contributing
 
-> Currently not accepting contributions. If you have feature requests or bug reports, please [create an issue](https://github.com/ue-too/ue-too/issues).
+> Currently not accepting contributions. If you have feature requests or bug reports, please [create an issue](https://github.com/kinnet-studio/ue-too/issues).

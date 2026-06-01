@@ -1,7 +1,7 @@
 # being
 
 [![npm version](https://img.shields.io/npm/v/@ue-too/being.svg)](https://www.npmjs.com/package/@ue-too/being)
-[![license](https://img.shields.io/npm/l/@ue-too/being.svg)](https://github.com/ue-too/ue-too/blob/main/LICENSE.txt)
+[![license](https://img.shields.io/npm/l/@ue-too/being.svg)](https://github.com/kinnet-studio/ue-too/blob/main/LICENSE.txt)
 
 This is a library that helps with building finite state machines.
 

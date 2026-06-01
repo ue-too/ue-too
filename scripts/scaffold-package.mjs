@@ -55,9 +55,9 @@ try {
         license: 'MIT',
         repository: {
             type: 'git',
-            url: 'https://github.com/ue-too/ue-too.git',
+            url: 'https://github.com/kinnet-studio/ue-too.git',
         },
-        homepage: 'https://github.com/ue-too/ue-too',
+        homepage: 'https://github.com/kinnet-studio/ue-too',
         scripts: {
             test: 'jest',
             'build:legacy': 'rm -rf dist && rollup -c rollup.config.js',
@@ -280,7 +280,7 @@ export {};
 Description of the ${packageName} package.
 
 [![npm version](https://img.shields.io/npm/v/@ue-too/${packageName}.svg)](https://www.npmjs.com/package/@ue-too/${packageName})
-[![license](https://img.shields.io/npm/l/@ue-too/${packageName}.svg)](https://github.com/ue-too/ue-too/blob/main/LICENSE.txt)
+[![license](https://img.shields.io/npm/l/@ue-too/${packageName}.svg)](https://github.com/kinnet-studio/ue-too/blob/main/LICENSE.txt)
 
 ## Overview
 
@@ -312,7 +312,7 @@ MIT
 
 ## Repository
 
-[https://github.com/ue-too/ue-too](https://github.com/ue-too/ue-too)
+[https://github.com/kinnet-studio/ue-too](https://github.com/kinnet-studio/ue-too)
 `;
     fs.writeFileSync(path.join(packageDir, 'README.md'), readme);
     console.log('✅ Created README.md');

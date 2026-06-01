@@ -56,13 +56,13 @@ packages/
     board-game-engine/
 
 apps/
-    examples/       — Interactive demos (https://ue-too.github.io/ue-too/)
+    examples/       — Interactive demos (https://kinnet-studio.github.io/ue-too/)
     blast/          — Tabletop game prototype maker (WIP)
     board-react/    — React example app
     board-vue/      — Vue example app
 ```
 
-Graduated apps (now in their own repos): banana (https://github.com/ue-too/banana), knit, horse-racing.
+Graduated apps (now in their own repos): banana (https://github.com/kinnet-studio/banana), knit, horse-racing.
 
 ## Standards
 

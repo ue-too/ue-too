@@ -479,7 +479,7 @@
             "type": "string"
         }
     },
-    "$id": "https://ue-too.github.io/board-game-engine/game-definition.schema.json",
+    "$id": "https://kinnet-studio.github.io/board-game-engine/game-definition.schema.json",
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "description": "Schema for defining board games declaratively in JSON format",
     "properties": {
