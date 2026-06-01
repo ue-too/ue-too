@@ -1,3 +1,14 @@
+## 0.17.6 (2026-06-01)
+
+### 🚀 Features
+
+- **board:** add input-mode toggle API to Board ([#419](https://github.com/ue-too/ue-too/pull/419), [#420](https://github.com/ue-too/ue-too/pull/420))
+
+### ❤️ Thank You
+
+- Claude Opus 4.8
+- vee @niuee
+
 ## 0.17.5 (2026-05-27)
 
 This was a version bump only, there were no code changes.
