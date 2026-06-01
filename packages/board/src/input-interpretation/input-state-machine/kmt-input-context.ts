@@ -331,7 +331,6 @@ export class CanvasProxy implements Canvas, Observable<[CanvasDimensions]> {
         this._canvas = canvas;
         this._canvasPositionDimensionPublisher.attach(canvas);
     }
-
 }
 
 export class SvgProxy implements Canvas, Observable<[CanvasDimensions]> {
@@ -471,7 +470,6 @@ export class SvgProxy implements Canvas, Observable<[CanvasDimensions]> {
             position: this._position,
         });
     }
-
 }
 
 /**
@@ -717,6 +715,7 @@ export class ObservableInputTracker implements KmtInputContext {
     enableInputModeDetection(): void {
         this._deciding = true;
         this._kmtTrackpadTrackScore = 0;
+        this._mode = 'TBD';
     }
 
     get kmtTrackpadTrackScore(): number {
