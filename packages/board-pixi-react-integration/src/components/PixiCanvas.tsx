@@ -26,9 +26,16 @@ export const PixiCanvas = ({
     ) => Promise<BaseAppComponents>;
     className?: string;
 }): React.ReactNode => {
-    const { canvasRef } = useInitializePixiApp(option, initFunction);
+    const { containerRef } = useInitializePixiApp(
+        option,
+        initFunction,
+        className
+    );
 
-    return <canvas ref={canvasRef} className={className} />;
+    // The hook owns canvas creation (a fresh <canvas> per init); we only
+    // provide the mount point. `display: contents` keeps this wrapper out of
+    // layout so the canvas lays out exactly as a direct child would.
+    return <div ref={containerRef} style={{ display: 'contents' }} />;
 };
 
 export const OverlayContainer = ({
@@ -48,7 +55,9 @@ export const OverlayContainer = ({
                 position: 'absolute',
                 top: 0,
                 left: 0,
-                ...(isReady ? { width, height } : { width: '100%', height: '100%' }),
+                ...(isReady
+                    ? { width, height }
+                    : { width: '100%', height: '100%' }),
                 pointerEvents: 'none',
             }}
         >
