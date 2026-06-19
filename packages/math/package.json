@@ -2,7 +2,7 @@
     "name": "@ue-too/math",
     "author": "niuee",
     "type": "module",
-    "version": "0.17.6",
+    "version": "0.17.7",
     "description": "Math utilities for uē-tôo",
     "license": "MIT",
     "repository": {
