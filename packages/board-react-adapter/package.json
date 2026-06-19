@@ -4,9 +4,9 @@
     "version": "0.17.6",
     "repository": {
         "type": "git",
-        "url": "https://github.com/ue-too/ue-too.git"
+        "url": "https://github.com/kinnet-studio/ue-too.git"
     },
-    "homepage": "https://github.com/ue-too/ue-too",
+    "homepage": "https://github.com/kinnet-studio/ue-too",
     "scripts": {
         "test": "jest",
         "build:legacy": "rm -rf dist && rollup -c rollup.config.js"
