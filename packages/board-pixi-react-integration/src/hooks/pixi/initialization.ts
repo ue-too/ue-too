@@ -1,91 +1,128 @@
-import { BaseAppComponents, InitAppOptions } from '@ue-too/board-pixi-integration';
+import {
+    BaseAppComponents,
+    InitAppOptions,
+} from '@ue-too/board-pixi-integration';
 import { useEffect, useRef } from 'react';
 
 import { usePixiCanvas } from '../../contexts/pixi';
 
+/**
+ * Initializes a Pixi application into a container element and tears it down on
+ * unmount. Attach the returned `containerRef` to a wrapping element; a fresh
+ * `<canvas>` is created inside it for each initialization.
+ *
+ * The design below prevents a class of WebGL-context bugs that hard-freeze the
+ * GPU process on some drivers (notably Linux/Mesa):
+ *
+ * 1. **Init runs once per mount.** Callers routinely pass an inline `option`
+ *    object and `initFunction` closure, so keying the effect on them would
+ *    re-initialize Pixi on every render — destroying and recreating the GL
+ *    context on the same canvas, which collides with the in-flight renderer
+ *    and wedges the GPU. The latest values are read from refs instead, so the
+ *    effect depends only on the stable `setResult`.
+ * 2. **Init/teardown are serialized** through a promise chain, so two
+ *    initializations never overlap (e.g. React StrictMode's mount→unmount→
+ *    mount in dev, or a fast remount). The previous context is fully destroyed
+ *    before the next one is created.
+ * 3. **A fresh `<canvas>` per init.** Pixi calls `WEBGL_lose_context` when the
+ *    renderer is destroyed; a canvas whose context was lost cannot be
+ *    reinitialized, so each init gets a brand-new element and the old one is
+ *    detached on teardown (`removeView`).
+ */
 export const useInitializePixiApp = <T extends InitAppOptions = InitAppOptions>(
     option: Partial<T>,
     initFunction: (
         canvas: HTMLCanvasElement,
         option: Partial<T>
-    ) => Promise<BaseAppComponents>
+    ) => Promise<BaseAppComponents>,
+    className?: string
 ) => {
     const { setResult } = usePixiCanvas<BaseAppComponents>();
-    const canvasRef = useRef<HTMLCanvasElement | null>(null);
+    const containerRef = useRef<HTMLDivElement | null>(null);
     const appComponentsRef = useRef<BaseAppComponents | null>(null);
-    const isInitializingRef = useRef(false);
+
+    // Latest values, read at init time without being effect dependencies (1).
+    const optionRef = useRef(option);
+    const initFunctionRef = useRef(initFunction);
+    const classNameRef = useRef(className);
+    optionRef.current = option;
+    initFunctionRef.current = initFunction;
+    classNameRef.current = className;
+
+    // Serializes init/teardown so two runs never overlap (2).
+    const chainRef = useRef<Promise<void>>(Promise.resolve());
 
     useEffect(() => {
-        const canvas = canvasRef.current;
-        if (!canvas || isInitializingRef.current) return;
+        const container = containerRef.current;
+        if (!container) return;
 
-        let isMounted = true;
-        isInitializingRef.current = true;
+        let cancelled = false;
 
-        const initializePixi = async () => {
-            try {
-                // Clean up any existing app first
+        const teardown = (components: BaseAppComponents | null) => {
+            if (!components) return;
+            components.cleanup();
+            components.cleanups.forEach(cleanup => cleanup());
+            // `removeView` detaches the <canvas>, so the element (and its
+            // now-lost GL context) is discarded rather than reused (3).
+            components.app.destroy({ removeView: true }, { children: true });
+        };
+
+        const run = chainRef.current
+            .then(async () => {
+                if (cancelled) return;
+
+                // Tear down a leftover app from a previous run before starting.
                 if (appComponentsRef.current) {
                     setResult({ initialized: false });
-                    appComponentsRef.current.cleanup();
-                    appComponentsRef.current.cleanups.forEach(cleanup =>
-                        cleanup()
-                    );
-                    appComponentsRef.current.app.destroy(false);
+                    teardown(appComponentsRef.current);
                     appComponentsRef.current = null;
                 }
 
-                // Small delay to ensure canvas is fully ready
-                await new Promise(resolve => setTimeout(resolve, 0));
+                const canvas = document.createElement('canvas');
+                if (classNameRef.current) {
+                    canvas.className = classNameRef.current;
+                }
+                container.appendChild(canvas);
 
-                if (!isMounted) return;
+                const components = await initFunctionRef.current(
+                    canvas,
+                    optionRef.current
+                );
 
-                // console.log('initialize pixi');
-
-                const appComponents = await initFunction(canvas, option);
-
-                if (!isMounted) {
-                    setResult({ initialized: true, success: false });
-                    appComponents.cleanup();
-                    appComponents.cleanups.forEach(cleanup => cleanup());
-                    appComponents.app.destroy(false);
-                    appComponentsRef.current = null;
+                if (cancelled) {
+                    // Unmounted while initializing — discard immediately.
+                    teardown(components);
                     return;
                 }
 
-                appComponentsRef.current = appComponents;
+                appComponentsRef.current = components;
                 setResult({
                     initialized: true,
                     success: true,
-                    components: appComponents,
+                    components,
                 });
-            } catch (error) {
-                setResult({ initialized: true, success: false });
+            })
+            .catch(error => {
                 console.error('Failed to initialize PixiJS:', error);
-                appComponentsRef.current?.cleanups.forEach(cleanup =>
-                    cleanup()
-                );
-                appComponentsRef.current?.cleanup();
-            } finally {
-                isInitializingRef.current = false;
-            }
-        };
+                setResult({ initialized: true, success: false });
+            });
 
-        initializePixi();
+        chainRef.current = run;
 
         // Cleanup function
         return () => {
-            isMounted = false;
-            isInitializingRef.current = false;
-            if (appComponentsRef.current) {
-                setResult({ initialized: false });
-                appComponentsRef.current.cleanup();
-                appComponentsRef.current.cleanups.forEach(cleanup => cleanup());
-                appComponentsRef.current.app.destroy(false);
-                appComponentsRef.current = null;
-            }
+            cancelled = true;
+            // Chain teardown after this run so we never destroy an app that is
+            // still initializing.
+            chainRef.current = run.then(() => {
+                if (appComponentsRef.current) {
+                    setResult({ initialized: false });
+                    teardown(appComponentsRef.current);
+                    appComponentsRef.current = null;
+                }
+            });
         };
-    }, [setResult, option]);
+    }, [setResult]);
 
-    return { canvasRef };
+    return { containerRef };
 };
