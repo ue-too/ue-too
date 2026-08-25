@@ -5,7 +5,8 @@ import {
     TemplateStateMachine,
 } from './interface';
 
-type VendingMachineEvents = {
+/** Events accepted by the {@link createVendingMachine} demo machine. */
+export type VendingMachineEvents = {
     insertBills: {};
     selectCoke: {};
     selectRedBull: {};
@@ -13,7 +14,8 @@ type VendingMachineEvents = {
     cancelTransaction: {};
 };
 
-type VendingMachineStates =
+/** States of the {@link createVendingMachine} demo machine. */
+export type VendingMachineStates =
     | 'IDLE'
     | 'ONE_DOLLAR_INSERTED'
     | 'TWO_DOLLARS_INSERTED'
@@ -176,13 +178,24 @@ class ThreeDollarsInsertedState extends TemplateState<
     };
 }
 
-const context: BaseContext = {
-    setup: () => {},
-    cleanup: () => {},
-};
-
-export const createVendingMachine = () =>
-    new TemplateStateMachine<
+/**
+ * Creates a demo vending machine used by tests and the examples visualizer.
+ *
+ * @remarks
+ * A 4-state machine (`IDLE`, `ONE_DOLLAR_INSERTED`, `TWO_DOLLARS_INSERTED`,
+ * `THREE_DOLLARS_INSERTED`) modeling a simple vending machine that accepts
+ * one-dollar bills and dispenses a Coke, Red Bull, or water once enough
+ * money has been inserted, with a `cancelTransaction` event to refund and
+ * return to `IDLE`. Each call returns a machine with its own context.
+ *
+ * @category Examples
+ */
+export const createVendingMachine = () => {
+    const context: BaseContext = {
+        setup: () => {},
+        cleanup: () => {},
+    };
+    return new TemplateStateMachine<
         VendingMachineEvents,
         BaseContext,
         VendingMachineStates
@@ -196,3 +209,4 @@ export const createVendingMachine = () =>
         'IDLE',
         context
     );
+};

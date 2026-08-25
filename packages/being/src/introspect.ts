@@ -1,5 +1,4 @@
 /**
- * @packageDocumentation
  * Read-only introspection utilities for state machines.
  */
 import { StateMachine } from './interface';
