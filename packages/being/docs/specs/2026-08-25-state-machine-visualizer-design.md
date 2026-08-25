@@ -30,7 +30,7 @@ replay.
 - Hierarchical machines (`CompositeState`) — board's real machines are flat
   and `hierarchical.ts` is a POC. Nested charts come later if the
   hierarchical API graduates.
-- Attaching to a machine running in a *different* page/app (devtools-style
+- Attaching to a machine running in a _different_ page/app (devtools-style
   protocol). The registry constructs machines locally with stub contexts.
 - Node dragging, click-selection, or manual re-layout. v1 interaction is
   board's pan/zoom only.
@@ -44,26 +44,25 @@ Two pieces, split by testability and reuse:
 1. **Graph extraction** — a pure function in `packages/being`
    (new `src/introspect.ts`, exported from the package index):
 
-   ```ts
-   extractMachineGraph(machine: StateMachine<any, any, any, any>): MachineGraph
+    ```ts
+    extractMachineGraph(machine: StateMachine<any, any, any, any>): MachineGraph
 
-   type MachineGraph = {
-       nodes: { id: string }[];
-       edges: { from: string; to: string; event: string; guard?: string }[];
-   };
-   ```
+    type MachineGraph = {
+        nodes: { id: string }[];
+        edges: { from: string; to: string; event: string; guard?: string }[];
+    };
+    ```
 
-   It walks `machine.possibleStates` and, for each state, its public
-   `eventReactions`, `eventGuards`, and `guards`. Per state + event it emits:
+    It walks `machine.possibleStates` and, for each state, its public
+    `eventReactions`, `eventGuards`, and `guards`. Per state + event it emits:
+    - one edge to `defaultTargetState`, or a **self-loop** (`to === from`)
+      when the reaction has no target;
+    - one **guard-labeled** edge per `eventGuards` mapping
+      (`guard` set to the guard's registry key).
 
-   - one edge to `defaultTargetState`, or a **self-loop** (`to === from`)
-     when the reaction has no target;
-   - one **guard-labeled** edge per `eventGuards` mapping
-     (`guard` set to the guard's registry key).
-
-   Extraction only reads public getters; the library's behavior is untouched.
-   Placing it in `being` puts the rules under vitest and leaves the door open
-   for later reuse (e.g. Mermaid/docs generation) at no extra cost now.
+    Extraction only reads public getters; the library's behavior is untouched.
+    Placing it in `being` puts the rules under vitest and leaves the door open
+    for later reuse (e.g. Mermaid/docs generation) at no extra cost now.
 
 2. **The visualizer page** — `apps/examples/src/state-machine-visualizer/`
    (`index.html`, `main.ts`, plus the modules below), registered in the

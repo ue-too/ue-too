@@ -47,9 +47,7 @@ export function layoutGraph(
         if (edge.from === edge.to) {
             return; // self-loops are drawn manually, not laid out by dagre
         }
-        const label = edge.guard
-            ? `${edge.event} [${edge.guard}]`
-            : edge.event;
+        const label = edge.guard ? `${edge.event} [${edge.guard}]` : edge.event;
         g.setEdge(
             edge.from,
             edge.to,
@@ -67,9 +65,7 @@ export function layoutGraph(
     const nodeById = new Map(nodes.map(n => [n.id, n]));
 
     const edges: LaidOutEdge[] = graph.edges.map((edge, i) => {
-        const label = edge.guard
-            ? `${edge.event} [${edge.guard}]`
-            : edge.event;
+        const label = edge.guard ? `${edge.event} [${edge.guard}]` : edge.event;
         if (edge.from === edge.to) {
             const n = nodeById.get(edge.from)!;
             const cornerX = n.x + n.width / 2;

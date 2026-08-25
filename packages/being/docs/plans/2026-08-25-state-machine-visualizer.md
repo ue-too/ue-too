@@ -25,19 +25,31 @@
 ### Task 1: `extractMachineGraph` in `@ue-too/being`
 
 **Files:**
+
 - Create: `packages/being/src/introspect.ts`
 - Modify: `packages/being/src/index.ts` (add one export line)
 - Test: `packages/being/test/introspect.test.ts`
 
 **Interfaces:**
+
 - Consumes: `StateMachine`, `TemplateState`, `TemplateStateMachine`, `BaseContext`, `Guard`, `EventGuards`, `EventReactions` from `packages/being/src/interface.ts` (all existing).
 - Produces (used by Tasks 4–6 via `import { extractMachineGraph, MachineGraph } from '@ue-too/being'`):
-  ```ts
-  type MachineGraphNode = { id: string };
-  type MachineGraphEdge = { from: string; to: string; event: string; guard?: string };
-  type MachineGraph = { nodes: MachineGraphNode[]; edges: MachineGraphEdge[] };
-  function extractMachineGraph(machine: StateMachine<any, any, any, any>): MachineGraph;
-  ```
+    ```ts
+    type MachineGraphNode = { id: string };
+    type MachineGraphEdge = {
+        from: string;
+        to: string;
+        event: string;
+        guard?: string;
+    };
+    type MachineGraph = {
+        nodes: MachineGraphNode[];
+        edges: MachineGraphEdge[];
+    };
+    function extractMachineGraph(
+        machine: StateMachine<any, any, any, any>
+    ): MachineGraph;
+    ```
 
 Semantics (from the spec): for each state and each event key in its `eventReactions`, emit one edge to `defaultTargetState` — or a self-loop (`to === from`) when the reaction has no target — plus one guard-labeled edge per `eventGuards` mapping for that event.
 
@@ -254,10 +266,12 @@ git commit -m "feat(being): add extractMachineGraph introspection utility"
 The visualizer registry (Task 3) needs `createVendingMachine`, which exists in `packages/being/src/vending-machine-example.ts` but is not exported from the package index. That file also has a stray module-level `console.log('test')` (last line) which would run for every importer — remove it as part of exporting.
 
 **Files:**
+
 - Modify: `packages/being/src/vending-machine-example.ts` (delete last line, `console.log('test');`)
 - Modify: `packages/being/src/index.ts` (add one export line)
 
 **Interfaces:**
+
 - Produces: `createVendingMachine(): TemplateStateMachine<VendingMachineEvents, BaseContext, VendingMachineStates>` importable from `'@ue-too/being'`. Its events (`insertBills`, `selectCoke`, `selectRedBull`, `selectWater`, `cancelTransaction`) all have empty payloads; states are `IDLE`, `ONE_DOLLAR_INSERTED`, `TWO_DOLLARS_INSERTED`, `THREE_DOLLARS_INSERTED`.
 
 - [ ] **Step 1: Remove the stray log and add the export**
@@ -293,6 +307,7 @@ git commit -m "feat(being): export vending machine example from package index"
 Create the new examples page with its HTML layout (canvas + sidebar), the machine registry seeded with the vending machine, and register the page in the Vite build, the examples nav, and i18n. No graph rendering yet — the page shows the canvas, the machine dropdown, and the current-state readout.
 
 **Files:**
+
 - Create: `apps/examples/src/state-machine-visualizer/index.html`
 - Create: `apps/examples/src/state-machine-visualizer/registry.ts`
 - Create: `apps/examples/src/state-machine-visualizer/main.ts`
@@ -301,21 +316,24 @@ Create the new examples page with its HTML layout (canvas + sidebar), the machin
 - Modify: `apps/examples/src/i18n/en.ts`, `apps/examples/src/i18n/zh-TW.ts` (3 keys each)
 
 **Interfaces:**
+
 - Consumes: `createVendingMachine` from `'@ue-too/being'` (Task 2); `Board` from `'@ue-too/board'`.
 - Produces (used by Tasks 5–7):
-  ```ts
-  // registry.ts
-  type RegistryEntry = {
-      id: string;
-      label: string;
-      create(): {
-          machine: StateMachine<any, any, any, any>;
-          samplePayloads: Record<string, unknown>;
-      };
-  };
-  const registry: RegistryEntry[];
-  ```
-  `main.ts` owns: `board: Board`, the rAF loop calling `board.step(performance.now())`, and a `selectMachine(entry: RegistryEntry): void` function that later tasks extend.
+
+    ```ts
+    // registry.ts
+    type RegistryEntry = {
+        id: string;
+        label: string;
+        create(): {
+            machine: StateMachine<any, any, any, any>;
+            samplePayloads: Record<string, unknown>;
+        };
+    };
+    const registry: RegistryEntry[];
+    ```
+
+    `main.ts` owns: `board: Board`, the rAF loop calling `board.step(performance.now())`, and a `selectMachine(entry: RegistryEntry): void` function that later tasks extend.
 
 - [ ] **Step 1: Create the page HTML**
 
@@ -433,7 +451,7 @@ Create the new examples page with its HTML layout (canvas + sidebar), the machin
 `apps/examples/src/state-machine-visualizer/registry.ts`:
 
 ```ts
-import { createVendingMachine, StateMachine } from '@ue-too/being';
+import { StateMachine, createVendingMachine } from '@ue-too/being';
 
 export type RegistryEntry = {
     id: string;
@@ -464,7 +482,7 @@ export const registry: RegistryEntry[] = [
 import { StateMachine } from '@ue-too/being';
 import { Board } from '@ue-too/board';
 
-import { registry, RegistryEntry } from './registry';
+import { RegistryEntry, registry } from './registry';
 
 const canvas = document.getElementById('graph') as HTMLCanvasElement;
 const board = new Board();
@@ -530,9 +548,7 @@ In `apps/examples/vite.config.js`, add to `rollupOptions.input` (after the `'svg
 In `apps/examples/src/index.html`, add a nav link next to the existing ones (after the SVG link, line ~131):
 
 ```html
-<a
-    href="state-machine-visualizer/index.html"
-    data-i18n="nav.state-machine"
+<a href="state-machine-visualizer/index.html" data-i18n="nav.state-machine"
     >State Machine Visualizer</a
 >
 ```
@@ -546,9 +562,7 @@ and an example card following the pattern of the existing `.example-card` blocks
         Interactive statechart visualizer and simulator for @ue-too/being
         machines, rendered with @ue-too/board.
     </p>
-    <a href="state-machine-visualizer/index.html" data-i18n="card.open"
-        >Open</a
-    >
+    <a href="state-machine-visualizer/index.html" data-i18n="card.open">Open</a>
 </div>
 ```
 
@@ -589,25 +603,42 @@ git commit -m "feat(examples): add state machine visualizer page skeleton and re
 ### Task 4: Dagre layout module
 
 **Files:**
+
 - Modify: `apps/examples/package.json` (add dependency)
 - Create: `apps/examples/src/state-machine-visualizer/layout.ts`
 
 **Interfaces:**
+
 - Consumes: `MachineGraph` from `'@ue-too/being'` (Task 1).
 - Produces (used by Task 5):
-  ```ts
-  type LaidOutNode = { id: string; x: number; y: number; width: number; height: number }; // x,y = center
-  type LaidOutEdge = {
-      from: string; to: string; event: string; guard?: string;
-      points: { x: number; y: number }[];
-      selfLoop: boolean;
-      labelX: number; labelY: number;
-      label: string; // "event" or "event [guard]"
-  };
-  type LaidOutGraph = { nodes: LaidOutNode[]; edges: LaidOutEdge[] };
-  function layoutGraph(graph: MachineGraph, measureText: (text: string) => number): LaidOutGraph;
-  ```
-  Edge order in `LaidOutGraph.edges` matches `MachineGraph.edges` order — Task 6 relies on this to flash the taken edge by index.
+
+    ```ts
+    type LaidOutNode = {
+        id: string;
+        x: number;
+        y: number;
+        width: number;
+        height: number;
+    }; // x,y = center
+    type LaidOutEdge = {
+        from: string;
+        to: string;
+        event: string;
+        guard?: string;
+        points: { x: number; y: number }[];
+        selfLoop: boolean;
+        labelX: number;
+        labelY: number;
+        label: string; // "event" or "event [guard]"
+    };
+    type LaidOutGraph = { nodes: LaidOutNode[]; edges: LaidOutEdge[] };
+    function layoutGraph(
+        graph: MachineGraph,
+        measureText: (text: string) => number
+    ): LaidOutGraph;
+    ```
+
+    Edge order in `LaidOutGraph.edges` matches `MachineGraph.edges` order — Task 6 relies on this to flash the taken edge by index.
 
 - [ ] **Step 1: Add the dagre dependency**
 
@@ -674,9 +705,7 @@ export function layoutGraph(
         if (edge.from === edge.to) {
             return; // self-loops are drawn manually, not laid out by dagre
         }
-        const label = edge.guard
-            ? `${edge.event} [${edge.guard}]`
-            : edge.event;
+        const label = edge.guard ? `${edge.event} [${edge.guard}]` : edge.event;
         g.setEdge(
             edge.from,
             edge.to,
@@ -694,9 +723,7 @@ export function layoutGraph(
     const nodeById = new Map(nodes.map(n => [n.id, n]));
 
     const edges: LaidOutEdge[] = graph.edges.map((edge, i) => {
-        const label = edge.guard
-            ? `${edge.event} [${edge.guard}]`
-            : edge.event;
+        const label = edge.guard ? `${edge.event} [${edge.guard}]` : edge.event;
         if (edge.from === edge.to) {
             const n = nodeById.get(edge.from)!;
             const cornerX = n.x + n.width / 2;
@@ -748,23 +775,27 @@ git commit -m "feat(examples): add dagre layout module for state machine visuali
 **Spec deviation (deliberate):** the spec suggested building edge curves via `@ue-too/curve`; this plan draws them directly with canvas `quadraticCurveTo` from dagre's waypoints. The curve package adds a dependency without simplifying anything here — dagre's waypoints map 1:1 onto canvas curve calls. If curve-based edges are wanted later (e.g. for hit-testing edges), that's a contained swap inside `render.ts`.
 
 **Files:**
+
 - Create: `apps/examples/src/state-machine-visualizer/render.ts`
 - Modify: `apps/examples/src/state-machine-visualizer/main.ts` (wire graph extraction + layout + drawing into the rAF loop)
 
 **Interfaces:**
+
 - Consumes: `LaidOutGraph`, `layoutGraph` (Task 4); `extractMachineGraph` (Task 1); `board.context` / `board.step` (existing Board API, world-space drawing as in `apps/examples/src/base/main.ts`).
 - Produces (used by Task 6):
-  ```ts
-  type Flash = { edgeIndex: number; at: number } | null;
-  function drawGraph(
-      ctx: CanvasRenderingContext2D,
-      layout: LaidOutGraph,
-      currentState: string | null,
-      flash: Flash,
-      now: number
-  ): void;
-  ```
-  `main.ts` after this task holds `let layout: LaidOutGraph | null` and `let flash: Flash`, rebuilt/cleared inside `selectMachine`.
+
+    ```ts
+    type Flash = { edgeIndex: number; at: number } | null;
+    function drawGraph(
+        ctx: CanvasRenderingContext2D,
+        layout: LaidOutGraph,
+        currentState: string | null,
+        flash: Flash,
+        now: number
+    ): void;
+    ```
+
+    `main.ts` after this task holds `let layout: LaidOutGraph | null` and `let flash: Flash`, rebuilt/cleared inside `selectMachine`.
 
 - [ ] **Step 1: Write the renderer**
 
@@ -901,7 +932,7 @@ Add imports:
 import { extractMachineGraph } from '@ue-too/being';
 
 import { LaidOutGraph, layoutGraph } from './layout';
-import { drawGraph, Flash } from './render';
+import { Flash, drawGraph } from './render';
 ```
 
 Add module state next to `let machine`:
@@ -952,9 +983,11 @@ git commit -m "feat(examples): render state machine graph on board canvas"
 ### Task 6: Simulator panel — fire events, log, reset
 
 **Files:**
+
 - Modify: `apps/examples/src/state-machine-visualizer/main.ts`
 
 **Interfaces:**
+
 - Consumes: everything from Tasks 3–5; `machine.happens`, `machine.onHappens`, `machine.onStateChange`, `machine.reset` (existing `StateMachine` API).
 - Produces: complete v1 user-facing behavior; no downstream consumers.
 
@@ -984,11 +1017,7 @@ function appendLog(text: string): void {
     }
 }
 
-function findTakenEdgeIndex(
-    from: string,
-    event: string,
-    to: string
-): number {
+function findTakenEdgeIndex(from: string, event: string, to: string): number {
     if (!layout) {
         return -1;
     }
@@ -1118,9 +1147,11 @@ git commit -m "feat(examples): add simulator panel with event firing, log, and r
 Add board's machines to the registry. Acceptance bar per the spec: **kmt-input must work**; touch and the camera-control machines are added where their contexts stub cleanly and skipped otherwise (note any skip in the commit message).
 
 **Files:**
+
 - Modify: `apps/examples/src/state-machine-visualizer/registry.ts`
 
 **Interfaces:**
+
 - Consumes: from `'@ue-too/board'`: `createKmtInputStateMachine`, `DummyKmtInputContext`, `createDefaultPanControlStateMachine`, `createDefaultZoomControlStateMachine`, `createDefaultRotateControlStateMachine`, `createTouchInputStateMachine`. All are exported through board's index chain (`board/src/index.ts` → `input-interpretation`/`camera` → their submodule indexes); if one fails to import, add the missing `export` to the relevant submodule `index.ts` rather than deep-importing.
 - Produces: additional `RegistryEntry` items; no interface changes.
 
@@ -1130,11 +1161,11 @@ In `registry.ts`, extend the imports and append to `registry`:
 
 ```ts
 import {
+    DummyKmtInputContext,
     createDefaultPanControlStateMachine,
     createDefaultRotateControlStateMachine,
     createDefaultZoomControlStateMachine,
     createKmtInputStateMachine,
-    DummyKmtInputContext,
 } from '@ue-too/board';
 ```
 
@@ -1214,6 +1245,7 @@ git commit -m "feat(examples): add board input and camera machines to visualizer
 ### Task 8: Final verification and polish
 
 **Files:**
+
 - Modify: whatever `bun run format` touches (formatting only).
 
 - [ ] **Step 1: Format**
