@@ -196,5 +196,3 @@ export const createVendingMachine = () =>
         'IDLE',
         context
     );
-
-console.log('test');
