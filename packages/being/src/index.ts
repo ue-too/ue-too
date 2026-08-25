@@ -110,6 +110,7 @@
  */
 
 export * from './interface';
+export * from './introspect';
 export * from './schema-factory';
 // Hierarchical state machine POC - experimental
 export * from './hierarchical';
