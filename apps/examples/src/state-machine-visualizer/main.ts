@@ -73,7 +73,15 @@ function fireEvent(
         return;
     }
     const before = String(machine.currentState);
-    const result = (machine.happens as any)(event, payload);
+    let result: { handled: boolean };
+    try {
+        result = (machine.happens as any)(event, payload);
+    } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        errorEl.textContent = `Action threw: ${message}`;
+        appendLog(`${event} ${payloadText} → action threw: ${message}`);
+        return;
+    }
     if (result.handled) {
         const after = String(machine.currentState);
         appendLog(`${event} ${payloadText} → ${before} ➜ ${after}`);
