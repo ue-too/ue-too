@@ -14,7 +14,18 @@ export const registry: RegistryEntry[] = [
         id: 'vending-machine',
         label: 'Vending machine (being example)',
         create: () => ({
-            machine: createVendingMachine(),
+            // Concrete machines with literal-union States aren't
+            // structurally assignable to StateMachine<any, any, any, any>:
+            // State['states']'s conditional `string extends States ? string
+            // : States` plus method variance defeats `any`-erasure. Confine
+            // the cast to this registry boundary rather than loosening
+            // `@ue-too/being`'s interfaces.
+            machine: createVendingMachine() as unknown as StateMachine<
+                any,
+                any,
+                any,
+                any
+            >,
             samplePayloads: {},
         }),
     },
