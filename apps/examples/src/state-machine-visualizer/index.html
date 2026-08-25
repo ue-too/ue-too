@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>State Machine Visualizer</title>
+        <style>
+            html,
+            body {
+                margin: 0;
+                height: 100%;
+                font-family:
+                    system-ui,
+                    -apple-system,
+                    sans-serif;
+            }
+            #app {
+                display: flex;
+                height: 100%;
+            }
+            #graph {
+                flex: 1;
+                min-width: 0;
+                display: block;
+            }
+            #sidebar {
+                width: 320px;
+                flex-shrink: 0;
+                border-left: 1px solid #e2e8f0;
+                padding: 12px;
+                overflow-y: auto;
+                box-sizing: border-box;
+                font-size: 14px;
+            }
+            #sidebar h1 {
+                font-size: 16px;
+                margin: 0 0 12px;
+            }
+            #machine-select {
+                width: 100%;
+                margin-bottom: 8px;
+            }
+            #current-state {
+                font-weight: 600;
+                margin-bottom: 12px;
+            }
+            #panel-error {
+                color: #dc2626;
+                margin-bottom: 8px;
+                white-space: pre-wrap;
+            }
+            .event-row {
+                margin-bottom: 6px;
+            }
+            .event-row button {
+                width: 100%;
+                text-align: left;
+                cursor: pointer;
+            }
+            .event-row textarea {
+                width: 100%;
+                box-sizing: border-box;
+                font-family: monospace;
+                font-size: 12px;
+                margin-top: 4px;
+            }
+            .event-row .payload-error {
+                color: #dc2626;
+                font-size: 12px;
+            }
+            #reset-btn {
+                width: 100%;
+                margin: 12px 0;
+                cursor: pointer;
+            }
+            #event-log {
+                list-style: none;
+                margin: 0;
+                padding: 0;
+                font-family: monospace;
+                font-size: 12px;
+            }
+            #event-log li {
+                border-top: 1px solid #f1f5f9;
+                padding: 2px 0;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="app">
+            <canvas id="graph"></canvas>
+            <div id="sidebar">
+                <h1>State Machine Visualizer</h1>
+                <select id="machine-select"></select>
+                <div id="current-state"></div>
+                <div id="panel-error"></div>
+                <div id="event-rows"></div>
+                <button id="reset-btn">Reset machine</button>
+                <ul id="event-log"></ul>
+            </div>
+        </div>
+        <script type="module" src="./main.ts"></script>
+    </body>
+</html>
