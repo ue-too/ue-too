@@ -15,6 +15,7 @@ const en = {
     'nav.camera-animation': 'Camera Animation',
     'nav.image': 'Image Example',
     'nav.svg': 'SVG Example',
+    'nav.state-machine': 'State Machine Visualizer',
 
     // Card titles & descriptions
     'card.base.title': 'Base Example',
@@ -43,6 +44,9 @@ const en = {
         'Camera animation examples. Shows how to create smooth camera transitions and animations.',
     'card.svg.title': 'SVG Example',
     'card.svg.desc': 'SVG examples. Demonstrates how to work with SVG in uē-tôo.',
+    'card.state-machine.title': 'State Machine Visualizer',
+    'card.state-machine.desc':
+        'Interactive statechart visualizer and simulator for @ue-too/being machines, rendered with @ue-too/board.',
     'card.image.title': 'Image Example',
     'card.image.desc':
         'Image manipulation examples. Demonstrates how to work with images in uē-tôo.',

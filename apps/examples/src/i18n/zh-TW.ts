@@ -15,6 +15,7 @@ const zhTW = {
     'nav.camera-animation': '鏡頭動畫',
     'nav.image': '圖片範例',
     'nav.svg': 'SVG 範例',
+    'nav.state-machine': '狀態機視覺化',
 
     // Card titles & descriptions
     'card.base.title': '基本範例',
@@ -43,6 +44,9 @@ const zhTW = {
         '鏡頭動畫範例。展示如何建立平滑的鏡頭轉場與動畫。',
     'card.svg.title': 'SVG 範例',
     'card.svg.desc': 'SVG 範例。展示如何在 uē-tôo 中使用 SVG。',
+    'card.state-machine.title': '狀態機視覺化',
+    'card.state-machine.desc':
+        '互動式狀態機視覺化與模擬器，使用 @ue-too/board 繪製 @ue-too/being 狀態機。',
     'card.image.title': '圖片範例',
     'card.image.desc':
         '圖片操作範例。展示如何在 uē-tôo 中使用圖片。',

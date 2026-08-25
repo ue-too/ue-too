@@ -40,7 +40,11 @@ export default defineConfig({
                     'src/image-example/index.html'
                 ),
                 physics: resolve(__dirname, 'src/physics/index.html'),
-                'svg': resolve(__dirname, 'src/svg/index.html'),
+                svg: resolve(__dirname, 'src/svg/index.html'),
+                'state-machine-visualizer': resolve(
+                    __dirname,
+                    'src/state-machine-visualizer/index.html'
+                ),
             },
         },
     },
