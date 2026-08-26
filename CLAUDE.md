@@ -10,7 +10,7 @@ A toolkit for interactive HTML canvas applications.
 - **Build**: Packages are bundled with `Bun.build()` (via `scripts/build.ts`) + `tsc --emitDeclarationOnly` for type declarations. Apps are bundled with Vite
 - **Formatting**: Prettier — 4-space indentation, single quotes, trailing comma `es5` (see `.prettierrc`)
 - **Docs**: TypeDoc with `@group` tags for API organization
-- **Publishing**: Changesets (`bun run version-packages`, `bun run release`)
+- **Publishing**: `nx release` via the manually triggered "Publish to NPM" workflow — version bump inferred from conventional commits (see Releases below)
 - **Node**: 22.19.0 (see `engines` in package.json)
 
 ## Commands
@@ -92,6 +92,19 @@ apps/
 - Each package independently publishable to npm as `@ue-too/<name>`
 - Minimize external and workspace dependencies
 - Follow the layered architecture (foundational → mid-level → integration)
+
+## Releases
+
+Releases are cut with `nx release` (NOT changesets) through the manually triggered **"Publish to NPM"** GitHub workflow. All packages version in lockstep (`v{version}` tags), and the bump is **inferred from conventional commits** since the last tag reachable from the branch the workflow runs on (`fix:` → patch, `feat:` → minor, `BREAKING CHANGE`/`!` → major). The workflow's `version-type` input defaults to `auto` (infer); pick an explicit bump only to override.
+
+- **Minor/major releases** run from `main`. After releasing, the workflow auto-creates a `version/X.Y.Z` branch for that release line.
+- **Patch releases** run from a `version/*` branch: cherry-pick the `fix:` commits from `main` onto it, then trigger the workflow there — inference sees only fixes and produces a patch. Release-branch bump commits and patch tags stay on the branch; never back-merge them to `main`.
+- Because patch tags are unreachable from `main`, a main release always diffs from the last minor/major tag — patches on release lines don't affect it.
+- Dry-run locally with `bun run bump-version:dry-run` (add `--specifier <bump>` to preview an override).
+
+### Commit messages are the version signal
+
+Conventional commit types directly drive published versions: a mislabeled commit (e.g. a breaking change without `!`) produces a wrong bump. Label commits accurately.
 
 ## Git
 
