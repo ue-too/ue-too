@@ -158,3 +158,6 @@ docs
 
 # TypeDoc i18n temporary config files
 .typedoc-i18n-*.json
+
+# stray browser-automation screenshots at repo root
+/*.png
