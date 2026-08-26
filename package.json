@@ -19,9 +19,6 @@
     "bump-version:dry-run": "nx release --skip-publish --dry-run",
     "move-packageJson": "nx run-many --target=move-package --parallel=true",
     "publish-packages": "nx release publish",
-    "changeset": "changeset",
-    "version-packages": "changeset version && bun run build && bun run replace-workspace-deps",
-    "release": "changeset publish",
     "replace-workspace-deps": "node scripts/replace-workspace-deps.mjs",
     "dev:examples": "nx dev examples",
     "scaffold:react": "node scripts/scaffold-react.mjs",
@@ -42,7 +39,6 @@
   },
   "homepage": "https://github.com/kinnet-studio/ue-too#readme",
   "devDependencies": {
-    "@changesets/cli": "^2.29.7",
     "@nx/devkit": "22.2.0",
     "@nx/js": "22.2.0",
     "@nx/playwright": "22.2.0",
