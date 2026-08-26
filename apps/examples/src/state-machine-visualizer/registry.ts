@@ -10,6 +10,8 @@ import {
     createTouchInputStateMachine,
 } from '@ue-too/board';
 
+import { createAccountDemoMachine } from './account-demo';
+
 export type RegistryEntry = {
     id: string;
     label: string;
@@ -37,6 +39,22 @@ export const registry: RegistryEntry[] = [
                 any
             >,
             samplePayloads: {},
+        }),
+    },
+    {
+        id: 'account-demo',
+        label: 'Bank account (preconditions demo)',
+        create: () => ({
+            machine: createAccountDemoMachine() as unknown as StateMachine<
+                any,
+                any,
+                any,
+                any
+            >,
+            samplePayloads: {
+                withdraw: { amount: 60 },
+                deposit: { amount: 50 },
+            },
         }),
     },
     {
