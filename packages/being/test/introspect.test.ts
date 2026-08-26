@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
     BaseContext,
     EventGuards,
+    EventPreconditions,
     EventReactions,
     Guard,
     TemplateState,
@@ -27,6 +28,12 @@ class AState extends TemplateState<Events, BaseContext, States> {
     > = {
         submit: [{ guard: 'isReady', target: 'C' }],
     };
+    protected _eventPreconditions: Partial<
+        EventPreconditions<Events, BaseContext, Guard<BaseContext>>
+    > = {
+        go: ['isReady'],
+        submit: ['isReady'],
+    };
 }
 
 class BState extends TemplateState<Events, BaseContext, States> {}
@@ -48,7 +55,12 @@ describe('extractMachineGraph', () => {
 
     it('emits an edge to defaultTargetState for a plain reaction', () => {
         const graph = extractMachineGraph(createMachine());
-        expect(graph.edges).toContainEqual({ from: 'A', to: 'B', event: 'go' });
+        expect(graph.edges).toContainEqual({
+            from: 'A',
+            to: 'B',
+            event: 'go',
+            preconditions: ['isReady'],
+        });
     });
 
     it('emits a self-loop when a reaction has no defaultTargetState', () => {
@@ -66,13 +78,22 @@ describe('extractMachineGraph', () => {
             from: 'A',
             to: 'A',
             event: 'submit',
+            preconditions: ['isReady'],
         });
         expect(graph.edges).toContainEqual({
             from: 'A',
             to: 'C',
             event: 'submit',
             guard: 'isReady',
+            preconditions: ['isReady'],
         });
+    });
+
+    it('omits the preconditions key on edges for events without declared preconditions', () => {
+        const graph = extractMachineGraph(createMachine());
+        const stayEdge = graph.edges.find(e => e.event === 'stay');
+        expect(stayEdge).toBeDefined();
+        expect(stayEdge).not.toHaveProperty('preconditions');
     });
 
     it('emits no outgoing edges for states without reactions', () => {
