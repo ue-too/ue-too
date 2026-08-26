@@ -218,6 +218,15 @@ export interface StateMachine<
     > = DefaultOutputMapping<EventPayloadMapping>,
 > {
     switchTo(state: States): void;
+    /**
+     * Read-only access to the machine's live context object. Optional so
+     * existing StateMachine implementations remain valid;
+     * {@link TemplateStateMachine} always provides it. Intended for
+     * tooling/introspection (e.g. visualizers evaluating guards against
+     * the current context) — mutate state through events, not through
+     * this reference.
+     */
+    readonly context?: Context;
     // Overload for known events - provides IntelliSense with typed output
     happens<K extends keyof EventPayloadMapping>(
         ...args: EventArgs<EventPayloadMapping, K>
@@ -767,6 +776,10 @@ export class TemplateStateMachine<
 
     setContext(context: Context): void {
         this._context = context;
+    }
+
+    get context(): Context {
+        return this._context;
     }
 
     get possibleStates(): States[] {
