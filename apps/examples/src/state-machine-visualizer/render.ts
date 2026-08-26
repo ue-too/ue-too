@@ -15,20 +15,27 @@ const COLORS = {
     flash: '#2563eb',
 };
 
+const CORNER_RADIUS = 6;
+
+function segmentLength(
+    a: { x: number; y: number },
+    b: { x: number; y: number }
+) {
+    return Math.hypot(b.x - a.x, b.y - a.y);
+}
+
 function edgePath(ctx: CanvasRenderingContext2D, edge: LaidOutEdge): void {
     const pts = edge.points;
     ctx.beginPath();
     ctx.moveTo(pts[0].x, pts[0].y);
-    if (edge.selfLoop) {
-        // single control point loop: start -> control -> end
-        ctx.quadraticCurveTo(pts[1].x, pts[1].y, pts[2].x, pts[2].y);
-        return;
-    }
-    // smooth polyline: quadratic curves through midpoints
+    // rectilinear polyline with slightly rounded elbows
     for (let i = 1; i < pts.length - 1; i++) {
-        const midX = (pts[i].x + pts[i + 1].x) / 2;
-        const midY = (pts[i].y + pts[i + 1].y) / 2;
-        ctx.quadraticCurveTo(pts[i].x, pts[i].y, midX, midY);
+        const radius = Math.min(
+            CORNER_RADIUS,
+            segmentLength(pts[i - 1], pts[i]) / 2,
+            segmentLength(pts[i], pts[i + 1]) / 2
+        );
+        ctx.arcTo(pts[i].x, pts[i].y, pts[i + 1].x, pts[i + 1].y, radius);
     }
     const last = pts[pts.length - 1];
     ctx.lineTo(last.x, last.y);
@@ -37,7 +44,7 @@ function edgePath(ctx: CanvasRenderingContext2D, edge: LaidOutEdge): void {
 function drawArrowhead(ctx: CanvasRenderingContext2D, edge: LaidOutEdge): void {
     const pts = edge.points;
     const tip = pts[pts.length - 1];
-    const prev = edge.selfLoop ? pts[1] : pts[pts.length - 2];
+    const prev = pts[pts.length - 2];
     const angle = Math.atan2(tip.y - prev.y, tip.x - prev.x);
     const size = 8;
     ctx.beginPath();
