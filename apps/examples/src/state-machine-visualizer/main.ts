@@ -17,6 +17,7 @@ const panelErrorEl = document.getElementById('panel-error')!;
 const eventRowsEl = document.getElementById('event-rows')!;
 const eventLogEl = document.getElementById('event-log')!;
 const resetBtn = document.getElementById('reset-btn') as HTMLButtonElement;
+const contextViewEl = document.getElementById('context-view')!;
 
 let machine: StateMachine<any, any, any, any> | null = null;
 let layout: LaidOutGraph | null = null;
@@ -29,6 +30,84 @@ function measureText(text: string): number {
 }
 
 const MAX_LOG_ENTRIES = 200;
+const MAX_CONTEXT_CHARS = 2000;
+
+/**
+ * Which edges can fire right now: the edge must leave the current state,
+ * and every declared precondition must pass against the live context.
+ * Routing-guard edges are not evaluated — their truth depends on
+ * post-action context, which can't be known before firing.
+ */
+function computeEnabledEdges(): boolean[] | null {
+    if (!machine || !layout) {
+        return null;
+    }
+    const current = String(machine.currentState);
+    const context = machine.context;
+    return layout.edges.map(edge => {
+        if (edge.from !== current) {
+            return false;
+        }
+        if (
+            !edge.preconditions ||
+            edge.preconditions.length === 0 ||
+            context === undefined
+        ) {
+            return true;
+        }
+        const guards = (machine!.states[edge.from]?.guards ?? {}) as Record<
+            string,
+            (context: unknown) => boolean
+        >;
+        return edge.preconditions.every(name => {
+            const evaluate = guards[name];
+            if (evaluate === undefined) {
+                return false; // fail closed, matching the machine's veto
+            }
+            try {
+                return evaluate(context);
+            } catch {
+                return true; // display-only: don't dim on a throwing guard
+            }
+        });
+    });
+}
+
+function serializeContext(context: unknown): string {
+    if (context === undefined || context === null) {
+        return '';
+    }
+    const seen = new WeakSet<object>();
+    let text: string | undefined;
+    try {
+        text = JSON.stringify(
+            context,
+            (key, value) => {
+                if (typeof value === 'function') {
+                    return undefined;
+                }
+                if (typeof value === 'object' && value !== null) {
+                    if (seen.has(value)) {
+                        return '[circular]';
+                    }
+                    seen.add(value);
+                }
+                return value;
+            },
+            2
+        );
+    } catch {
+        return '(context not serializable)';
+    }
+    if (text === undefined) {
+        return '(context not serializable)';
+    }
+    return text.length > MAX_CONTEXT_CHARS
+        ? `${text.slice(0, MAX_CONTEXT_CHARS)}\n…`
+        : text;
+}
+
+let lastContextText: string | null = null;
 
 function appendLog(text: string): void {
     const li = document.createElement('li');
@@ -176,11 +255,23 @@ function step() {
     board.step(performance.now());
     if (board.context && layout) {
         const current = machine ? String(machine.currentState) : null;
-        drawGraph(board.context, layout, current, flash, performance.now());
+        drawGraph(
+            board.context,
+            layout,
+            current,
+            flash,
+            performance.now(),
+            computeEnabledEdges() ?? undefined
+        );
     }
     currentStateEl.textContent = machine
         ? `Current state: ${String(machine.currentState)}`
         : 'No machine loaded';
+    const contextText = machine ? serializeContext(machine.context) : '';
+    if (contextText !== lastContextText) {
+        contextViewEl.textContent = contextText;
+        lastContextText = contextText;
+    }
     requestAnimationFrame(step);
 }
 requestAnimationFrame(step);

@@ -44,6 +44,24 @@
                 font-weight: 600;
                 margin-bottom: 12px;
             }
+            #context-panel {
+                margin-bottom: 12px;
+            }
+            #context-panel summary {
+                font-weight: 600;
+                cursor: pointer;
+            }
+            #context-view {
+                background: #f8fafc;
+                border: 1px solid #e2e8f0;
+                border-radius: 4px;
+                padding: 6px;
+                margin: 4px 0 0;
+                font-size: 11px;
+                max-height: 180px;
+                overflow: auto;
+                white-space: pre-wrap;
+            }
             #panel-error {
                 color: #dc2626;
                 margin-bottom: 8px;
@@ -93,6 +111,10 @@
                 <h1>State Machine Visualizer</h1>
                 <select id="machine-select"></select>
                 <div id="current-state"></div>
+                <details id="context-panel" open>
+                    <summary>Context</summary>
+                    <pre id="context-view"></pre>
+                </details>
                 <div id="panel-error"></div>
                 <div id="event-rows"></div>
                 <button id="reset-btn">Reset machine</button>

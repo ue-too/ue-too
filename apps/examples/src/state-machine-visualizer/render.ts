@@ -61,12 +61,15 @@ function drawArrowhead(ctx: CanvasRenderingContext2D, edge: LaidOutEdge): void {
     ctx.fill();
 }
 
+const DIMMED_ALPHA = 0.22;
+
 export function drawGraph(
     ctx: CanvasRenderingContext2D,
     layout: LaidOutGraph,
     currentState: string | null,
     flash: Flash,
-    now: number
+    now: number,
+    enabledEdges?: boolean[]
 ): void {
     ctx.save();
     ctx.font = '13px system-ui, sans-serif';
@@ -78,6 +81,11 @@ export function drawGraph(
             flash !== null &&
             flash.edgeIndex === i &&
             now - flash.at < FLASH_DURATION_MS;
+        const dimmed = enabledEdges !== undefined && enabledEdges[i] === false;
+        ctx.save();
+        if (dimmed) {
+            ctx.globalAlpha = DIMMED_ALPHA;
+        }
         ctx.strokeStyle = COLORS.edge;
         ctx.fillStyle = COLORS.edge;
         ctx.lineWidth = 1.5;
@@ -103,6 +111,7 @@ export function drawGraph(
         ctx.lineWidth = 4;
         ctx.strokeText(edge.label, edge.labelX, edge.labelY);
         ctx.fillText(edge.label, edge.labelX, edge.labelY);
+        ctx.restore();
         ctx.restore();
     });
 

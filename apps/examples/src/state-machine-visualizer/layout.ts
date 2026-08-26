@@ -14,6 +14,7 @@ export type LaidOutEdge = {
     to: string;
     event: string;
     guard?: string;
+    preconditions?: string[];
     points: { x: number; y: number }[];
     selfLoop: boolean;
     labelX: number;
