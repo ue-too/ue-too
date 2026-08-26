@@ -71,10 +71,10 @@ export type CreateStateType<ArrayLiteral extends readonly string[]> =
  */
 export type EventArgs<EventPayloadMapping, K> =
     K extends keyof EventPayloadMapping
-    ? IsEmptyObject<EventPayloadMapping[K]> extends true
-    ? [event: K] // No payload needed
-    : [event: K, payload: EventPayloadMapping[K]] // Payload required
-    : [event: K, payload?: unknown]; // Unknown events
+        ? IsEmptyObject<EventPayloadMapping[K]> extends true
+            ? [event: K] // No payload needed
+            : [event: K, payload: EventPayloadMapping[K]] // Payload required
+        : [event: K, payload?: unknown]; // Unknown events
 
 /**
  * No-operation function constant used as a placeholder for optional actions.
@@ -85,7 +85,7 @@ export type EventArgs<EventPayloadMapping, K> =
  *
  * @category Core
  */
-export const NO_OP: NOOP = () => { };
+export const NO_OP: NOOP = () => {};
 
 /**
  * Result type indicating an event was not handled by the current state.
@@ -329,9 +329,17 @@ export interface State<
     eventGuards: Partial<
         EventGuards<EventPayloadMapping, States, Context, Guard<Context>>
     >;
+    /**
+     * Pre-action vetoes: named guards that must all pass before this state
+     * handles an event. Optional so existing State implementations remain
+     * valid; {@link TemplateState} always provides it.
+     */
+    eventPreconditions?: Partial<
+        EventPreconditions<EventPayloadMapping, Context, Guard<Context>>
+    >;
     delay:
-    | Delay<Context, EventPayloadMapping, States, EventOutputMapping>
-    | undefined;
+        | Delay<Context, EventPayloadMapping, States, EventOutputMapping>
+        | undefined;
     eventReactions: EventReactions<
         EventPayloadMapping,
         Context,
@@ -361,22 +369,22 @@ export type EventReactions<
         Record<keyof EventPayloadMapping, unknown>
     > = DefaultOutputMapping<EventPayloadMapping>,
 > = {
-        [K in keyof Partial<EventPayloadMapping>]: {
-            action: (
-                context: Context,
-                event: EventPayloadMapping[K],
-                stateMachine: StateMachine<
-                    EventPayloadMapping,
-                    Context,
-                    States,
-                    EventOutputMapping
-                >
-            ) => K extends keyof EventOutputMapping
-                ? EventOutputMapping[K] | void
-                : void;
-            defaultTargetState?: States;
-        };
+    [K in keyof Partial<EventPayloadMapping>]: {
+        action: (
+            context: Context,
+            event: EventPayloadMapping[K],
+            stateMachine: StateMachine<
+                EventPayloadMapping,
+                Context,
+                States,
+                EventOutputMapping
+            >
+        ) => K extends keyof EventOutputMapping
+            ? EventOutputMapping[K] | void
+            : void;
+        defaultTargetState?: States;
     };
+};
 
 /**
  * @description This is the type for the guard evaluation when a state transition is happening.
@@ -485,8 +493,41 @@ export type EventGuards<
     Context extends BaseContext,
     T extends Guard<Context>,
 > = {
-        [K in keyof EventPayloadMapping]: GuardMapping<Context, T, States>[];
-    };
+    [K in keyof EventPayloadMapping]: GuardMapping<Context, T, States>[];
+};
+
+/**
+ * @description Per-event preconditions: named guards that must ALL pass
+ * before a state handles an event.
+ *
+ * @remarks
+ * Preconditions are evaluated at the very start of {@link TemplateState.handles},
+ * before the defer hook and before the event's reaction runs. If any listed
+ * guard evaluates to false — or names a guard missing from the state's
+ * {@link State.guards} registry (fail closed) — the event is vetoed: the state
+ * returns `{ handled: false }`, no action runs, and no transition occurs.
+ * An unhandled result lets hierarchical machines bubble the event to a parent.
+ *
+ * This differs from {@link EventGuards}, which run AFTER the action to pick a
+ * target state. The same named guards from the state's guard registry can be
+ * referenced by both.
+ *
+ * Generic parameters:
+ * - EventPayloadMapping: A mapping of events to their payloads.
+ * - Context: The context of the state machine.
+ * - T: The guard type (its keys become the valid precondition names).
+ *
+ * @category Types
+ */
+export type EventPreconditions<
+    EventPayloadMapping,
+    Context extends BaseContext,
+    T extends Guard<Context>,
+> = {
+    [K in keyof EventPayloadMapping]: (T extends Guard<Context, infer G>
+        ? G
+        : never)[];
+};
 
 /**
  * Concrete implementation of a finite state machine.
@@ -848,6 +889,11 @@ export abstract class TemplateState<
     > = {} as Partial<
         EventGuards<EventPayloadMapping, States, Context, Guard<Context>>
     >;
+    protected _eventPreconditions: Partial<
+        EventPreconditions<EventPayloadMapping, Context, Guard<Context>>
+    > = {} as Partial<
+        EventPreconditions<EventPayloadMapping, Context, Guard<Context>>
+    >;
     protected _delay:
         | Delay<Context, EventPayloadMapping, States, EventOutputMapping>
         | undefined = undefined;
@@ -870,6 +916,12 @@ export abstract class TemplateState<
         EventGuards<EventPayloadMapping, States, Context, Guard<Context>>
     > {
         return this._eventGuards;
+    }
+
+    get eventPreconditions(): Partial<
+        EventPreconditions<EventPayloadMapping, Context, Guard<Context>>
+    > {
+        return this._eventPreconditions;
     }
 
     get eventReactions(): EventReactions<
@@ -929,6 +981,16 @@ export abstract class TemplateState<
         const eventKey = args[0] as keyof EventPayloadMapping;
         const eventPayload =
             args[1] as EventPayloadMapping[keyof EventPayloadMapping];
+        const preconditions = this._eventPreconditions[eventKey];
+        if (preconditions) {
+            for (const guardKey of preconditions) {
+                const evaluation = this._guards[guardKey];
+                // an unregistered guard name fails closed
+                if (evaluation === undefined || !evaluation(context)) {
+                    return { handled: false };
+                }
+            }
+        }
         if (this._defer) {
             const result = this._defer.action(
                 context,
@@ -970,15 +1032,15 @@ export abstract class TemplateState<
                 return finalResult as EventResult<
                     States,
                     K extends keyof EventOutputMapping
-                    ? EventOutputMapping[K]
-                    : void
+                        ? EventOutputMapping[K]
+                        : void
                 >;
             }
             return resultWithOutput as EventResult<
                 States,
                 K extends keyof EventOutputMapping
-                ? EventOutputMapping[K]
-                : void
+                    ? EventOutputMapping[K]
+                    : void
             >;
         }
         return { handled: false };
