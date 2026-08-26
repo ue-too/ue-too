@@ -18,6 +18,12 @@ export type MachineGraphNode = { id: string };
  * the guard's key in the state's guard registry. Edges with `to === from` are
  * self-loops (a reaction without a `defaultTargetState`).
  *
+ * `preconditions` is set when the source state declares `eventPreconditions`
+ * for the edge's event: the named guards that must all pass before the event
+ * is handled. All edges for that event carry the same list, since a failed
+ * precondition vetoes the event as a whole. The key is absent for events
+ * without declared preconditions.
+ *
  * @category Introspection
  */
 export type MachineGraphEdge = {
@@ -25,6 +31,7 @@ export type MachineGraphEdge = {
     to: string;
     event: string;
     guard?: string;
+    preconditions?: string[];
 };
 
 /**
@@ -42,10 +49,11 @@ export type MachineGraph = {
  *
  * @remarks
  * Reads only the machine's public surface (`possibleStates`, each state's
- * `eventReactions` and `eventGuards`) — the machine's behavior is untouched.
- * Per state and event, emits one edge to the reaction's
- * `defaultTargetState` (or a self-loop when it has none), plus one
- * guard-labeled edge per `eventGuards` mapping.
+ * `eventReactions`, `eventGuards`, and `eventPreconditions`) — the machine's
+ * behavior is untouched. Per state and event, emits one edge to the
+ * reaction's `defaultTargetState` (or a self-loop when it has none), plus
+ * one guard-labeled edge per `eventGuards` mapping; every edge carries the
+ * event's declared preconditions, if any.
  *
  * @category Introspection
  */
@@ -65,11 +73,21 @@ export function extractMachineGraph(
             string,
             { guard: string; target: string }[] | undefined
         >;
+        const eventPreconditions = (state.eventPreconditions ?? {}) as Record<
+            string,
+            string[] | undefined
+        >;
         for (const event of Object.keys(reactions)) {
+            const preconditions = eventPreconditions[event];
+            const preconditionProps =
+                preconditions && preconditions.length > 0
+                    ? { preconditions: [...preconditions] }
+                    : {};
             edges.push({
                 from: stateId,
                 to: reactions[event].defaultTargetState ?? stateId,
                 event,
+                ...preconditionProps,
             });
             for (const mapping of eventGuards[event] ?? []) {
                 edges.push({
@@ -77,6 +95,7 @@ export function extractMachineGraph(
                     to: mapping.target,
                     event,
                     guard: mapping.guard,
+                    ...preconditionProps,
                 });
             }
         }

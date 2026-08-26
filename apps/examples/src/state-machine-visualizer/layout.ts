@@ -29,6 +29,27 @@ export type LaidOutGraph = {
 const NODE_PADDING_X = 24;
 const NODE_HEIGHT = 44;
 
+/**
+ * Builds an edge's display label: the event name, its preconditions
+ * (joined with ∧) when the source state declares any, and the routing
+ * guard in brackets for eventGuards edges.
+ * e.g. `withdraw if hasFunds [isOverdrawn]`
+ */
+function edgeLabel(edge: {
+    event: string;
+    guard?: string;
+    preconditions?: string[];
+}): string {
+    let label = edge.event;
+    if (edge.preconditions && edge.preconditions.length > 0) {
+        label += ` if ${edge.preconditions.join(' ∧ ')}`;
+    }
+    if (edge.guard) {
+        label += ` [${edge.guard}]`;
+    }
+    return label;
+}
+
 type Point = { x: number; y: number };
 type Axis = 'horizontal' | 'vertical';
 
@@ -226,7 +247,7 @@ export function layoutGraph(
         if (edge.from === edge.to) {
             return; // self-loops are drawn manually, not laid out by dagre
         }
-        const label = edge.guard ? `${edge.event} [${edge.guard}]` : edge.event;
+        const label = edgeLabel(edge);
         g.setEdge(
             edge.from,
             edge.to,
@@ -248,7 +269,7 @@ export function layoutGraph(
     const selfLoopIndexByNode = new Map<string, number>();
 
     const edges: LaidOutEdge[] = graph.edges.map((edge, i) => {
-        const label = edge.guard ? `${edge.event} [${edge.guard}]` : edge.event;
+        const label = edgeLabel(edge);
         if (edge.from === edge.to) {
             const n = nodeById.get(edge.from)!;
             const cornerX = n.x + n.width / 2;
