@@ -143,6 +143,15 @@ Some apps that started in this monorepo have moved to their own repositories onc
 - **knit** (knitting pattern editor) → moved to a private repository
 - **horse-racing** (RL environment) → moved to a private repository
 
+## Release Flow
+
+All `@ue-too/*` packages are versioned in lockstep and published with [`nx release`](https://nx.dev/features/manage-releases) through the manually triggered **"Publish to NPM"** GitHub workflow. The version bump is inferred from [conventional commits](https://www.conventionalcommits.org/) since the last tag reachable from the branch the workflow runs on — `fix:` → patch, `feat:` → minor, `BREAKING CHANGE` → major. The workflow input defaults to `auto`; an explicit patch/minor/major can be selected to override the inference.
+
+- **Minor/major releases** are cut from `main`. Each one auto-creates a `version/X.Y.Z` branch for that release line.
+- **Patch releases** are cut from a `version/*` branch: fixes are cherry-picked from `main` onto the branch, and the workflow is triggered there — with only `fix:` commits on the branch, inference produces a patch. Patch tags and bump commits stay on the release branch, so `main` releases always diff from the last minor/major tag.
+
+Preview the next version locally with `bun run bump-version:dry-run`.
+
 ## License
 
 MIT License - see [LICENSE.txt](LICENSE.txt) for details.
