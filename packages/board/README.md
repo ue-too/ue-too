@@ -17,7 +17,7 @@
 <p align="center">
   <a href="#examples">Examples</a> •
   <a href="#quick-coding-demo">Quick Coding Demo</a> •
-  <a href="https://kinnet-studio.github.io/documentation/board/">Documentation</a> •
+  <a href="https://kinnet-studio.github.io/ue-too-documentation/board/">Documentation</a> •
   <a href="#installation-and-usage">Install</a> •
   <a href="#key-features">Key Features</a> •
   <a href="#quick-start-html-canvas">Quick Start</a> •
@@ -73,7 +73,7 @@ This monorepo includes comprehensive examples demonstrating various packages and
 
 ## Documentation
 
-The documentation is available [here](https://kinnet-studio.github.io/documentation/board/).
+The documentation is available [here](https://kinnet-studio.github.io/ue-too-documentation/board/).
 
 ## Installation and Usage
 

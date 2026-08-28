@@ -14,7 +14,7 @@
 
 <p align="center">
   <a href="#overview">Overview</a> •
-  <a href="https://kinnet-studio.github.io/documentation/">Documentation</a> •
+  <a href="https://kinnet-studio.github.io/ue-too-documentation/">Documentation</a> •
   <a href="#packages">Packages</a> •
   <a href="#examples">Examples</a> •
   <a href="#development">Development</a>
