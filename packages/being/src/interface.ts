@@ -248,8 +248,21 @@ export interface StateMachine<
             EventOutputMapping
         >
     >;
+    /**
+     * Subscribe to state changes. Returns a disposer on implementations that
+     * support one. Disposing during a dispatch takes effect starting with
+     * the next dispatch, not the one in progress — see
+     * {@link EventResultCallback} for the exact snapshot-iteration semantics.
+     */
     onStateChange(callback: StateChangeCallback<States>): void | (() => void);
     possibleStates: States[];
+    /**
+     * Subscribe to every `happens()` call, before the state handles it.
+     * Returns a disposer on implementations that support one. Disposing
+     * during a dispatch takes effect starting with the next dispatch, not
+     * the one in progress — see {@link EventResultCallback} for the exact
+     * snapshot-iteration semantics.
+     */
     onHappens(
         callback: (
             args: EventArgs<
@@ -263,6 +276,9 @@ export interface StateMachine<
      * Subscribe to every event result. Optional so existing StateMachine
      * implementations remain valid; {@link TemplateStateMachine} always
      * provides it. Returns a disposer on implementations that support one.
+     * Disposing during a dispatch takes effect starting with the next
+     * dispatch, not the one in progress — see {@link EventResultCallback}
+     * for the exact snapshot-iteration semantics.
      */
     onEventResult?(
         callback: EventResultCallback<EventPayloadMapping, Context, States>
@@ -292,6 +308,14 @@ export type StateChangeCallback<States extends string = 'IDLE'> = (
  * reaches a state — including a precondition veto (`{ handled: false }`)
  * and a self-transition, neither of which triggers a state change. Intended
  * for tooling/introspection; do not mutate the context from here.
+ *
+ * @remarks
+ * Each dispatch iterates a snapshot of the subscriber list taken at the
+ * start of that dispatch. Disposing a subscription — including from inside
+ * the callback itself, or from another callback earlier in the same
+ * dispatch — takes effect starting with the *next* dispatch: the callback
+ * that was just disposed still runs for the dispatch currently in progress.
+ * This keeps re-entrant disposal from skipping a neighbouring callback.
  *
  * @category Types
  */
