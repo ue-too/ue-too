@@ -29,8 +29,11 @@ export interface KMTEventParser {
     /**
      * The state machine this parser dispatches into, when the implementation
      * exposes one. Optional so existing external parser implementations
-     * remain valid. Intended for tooling/introspection — dispatch through
-     * the parser, not through this reference.
+     * remain valid — typed to the minimal `{ happens }` contract this parser
+     * itself needs, so an external implementation satisfies this member
+     * without providing a full `being` `StateMachine`. Intended for
+     * tooling/introspection — dispatch through the parser, not through this
+     * reference.
      */
     readonly stateMachine?: StateMachine;
 }
