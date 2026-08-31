@@ -206,6 +206,14 @@ function buildEventRows(samplePayloads: Record<string, unknown>): void {
     }
 }
 
+function createMachineFor(
+    entry: RegistryEntry
+): StateMachine<any, any, any, any> {
+    return entry.source.kind === 'simulated'
+        ? entry.source.create()
+        : entry.source.resolve(board);
+}
+
 function selectMachine(entry: RegistryEntry): void {
     if (machine) {
         machine.wrapup();
@@ -215,11 +223,10 @@ function selectMachine(entry: RegistryEntry): void {
     }
     panelErrorEl.textContent = '';
     try {
-        const created = entry.create();
-        machine = created.machine;
-        layout = layoutGraph(extractMachineGraph(created.machine), measureText);
+        machine = createMachineFor(entry);
+        layout = layoutGraph(extractMachineGraph(machine), measureText);
         flash = null;
-        buildEventRows(created.samplePayloads);
+        buildEventRows(entry.samplePayloads);
         eventLogEl.textContent = '';
         appendLog(`loaded ${entry.label}`);
     } catch (error) {

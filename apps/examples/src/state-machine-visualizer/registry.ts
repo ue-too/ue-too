@@ -1,5 +1,6 @@
 import { StateMachine, createVendingMachine } from '@ue-too/being';
 import {
+    Board,
     DummyCanvas,
     DummyKmtInputContext,
     TouchInputTracker,
@@ -12,117 +13,161 @@ import {
 
 import { createAccountDemoMachine } from './account-demo';
 
+/**
+ * Where a registry entry's machine comes from.
+ *
+ * - `simulated` constructs a fresh machine the page owns outright.
+ * - `live` borrows a machine already running inside the page's viewport
+ *   Board, so real input drives it. A live machine must never be
+ *   `wrapup()`-ed by the page: that parks it in TERMINAL and the real board
+ *   stops responding to input.
+ */
+export type MachineSource =
+    | { kind: 'simulated'; create(): StateMachine<any, any, any, any> }
+    | {
+          kind: 'live';
+          resolve(board: Board): StateMachine<any, any, any, any>;
+      };
+
 export type RegistryEntry = {
     id: string;
     label: string;
-    create(): {
-        machine: StateMachine<any, any, any, any>;
-        samplePayloads: Record<string, unknown>;
-    };
+    samplePayloads: Record<string, unknown>;
+    source: MachineSource;
 };
 
 export const registry: RegistryEntry[] = [
     {
         id: 'vending-machine',
         label: 'Vending machine (being example)',
-        create: () => ({
+        samplePayloads: {},
+        source: {
+            kind: 'simulated',
             // Concrete machines with literal-union States aren't
             // structurally assignable to StateMachine<any, any, any, any>:
             // State['states']'s conditional `string extends States ? string
             // : States` plus method variance defeats `any`-erasure. Confine
             // the cast to this registry boundary rather than loosening
             // `@ue-too/being`'s interfaces.
-            machine: createVendingMachine() as unknown as StateMachine<
-                any,
-                any,
-                any,
-                any
-            >,
-            samplePayloads: {},
-        }),
+            create: () =>
+                createVendingMachine() as unknown as StateMachine<
+                    any,
+                    any,
+                    any,
+                    any
+                >,
+        },
     },
     {
         id: 'account-demo',
         label: 'Bank account (preconditions demo)',
-        create: () => ({
-            machine: createAccountDemoMachine() as unknown as StateMachine<
-                any,
-                any,
-                any,
-                any
-            >,
-            samplePayloads: {
-                withdraw: { amount: 60 },
-                deposit: { amount: 50 },
-            },
-        }),
+        samplePayloads: {
+            withdraw: { amount: 60 },
+            deposit: { amount: 50 },
+        },
+        source: {
+            kind: 'simulated',
+            create: () =>
+                createAccountDemoMachine() as unknown as StateMachine<
+                    any,
+                    any,
+                    any,
+                    any
+                >,
+        },
     },
     {
         id: 'kmt-input',
         label: 'Board: keyboard/mouse input',
-        create: () => ({
-            machine: createKmtInputStateMachine(
-                new DummyKmtInputContext()
-            ) as unknown as StateMachine<any, any, any, any>,
-            samplePayloads: {
-                leftPointerDown: { x: 100, y: 100 },
-                leftPointerUp: { x: 100, y: 100 },
-                leftPointerMove: { x: 120, y: 110 },
-                middlePointerDown: { x: 100, y: 100 },
-                middlePointerUp: { x: 100, y: 100 },
-                middlePointerMove: { x: 120, y: 110 },
-                pointerMove: { x: 120, y: 110 },
-                scroll: { deltaX: 0, deltaY: -100, x: 100, y: 100 },
-                scrollWithCtrl: { deltaX: 0, deltaY: -100, x: 100, y: 100 },
-            },
-        }),
+        samplePayloads: {
+            leftPointerDown: { x: 100, y: 100 },
+            leftPointerUp: { x: 100, y: 100 },
+            leftPointerMove: { x: 120, y: 110 },
+            middlePointerDown: { x: 100, y: 100 },
+            middlePointerUp: { x: 100, y: 100 },
+            middlePointerMove: { x: 120, y: 110 },
+            pointerMove: { x: 120, y: 110 },
+            scroll: { deltaX: 0, deltaY: -100, x: 100, y: 100 },
+            scrollWithCtrl: { deltaX: 0, deltaY: -100, x: 100, y: 100 },
+        },
+        source: {
+            kind: 'simulated',
+            create: () =>
+                createKmtInputStateMachine(
+                    new DummyKmtInputContext()
+                ) as unknown as StateMachine<any, any, any, any>,
+        },
     },
     {
         id: 'pan-control',
         label: 'Board: pan control',
-        create: () => ({
-            machine:
+        samplePayloads: {},
+        source: {
+            kind: 'simulated',
+            create: () =>
                 createDefaultPanControlStateMachine() as unknown as StateMachine<
                     any,
                     any,
                     any,
                     any
                 >,
-            samplePayloads: {},
-        }),
+        },
     },
     {
         id: 'zoom-control',
         label: 'Board: zoom control',
-        create: () => ({
-            machine:
+        samplePayloads: {},
+        source: {
+            kind: 'simulated',
+            create: () =>
                 createDefaultZoomControlStateMachine() as unknown as StateMachine<
                     any,
                     any,
                     any,
                     any
                 >,
-            samplePayloads: {},
-        }),
+        },
     },
     {
         id: 'rotation-control',
         label: 'Board: rotation control',
-        create: () => ({
-            machine:
+        samplePayloads: {},
+        source: {
+            kind: 'simulated',
+            create: () =>
                 createDefaultRotateControlStateMachine() as unknown as StateMachine<
                     any,
                     any,
                     any,
                     any
                 >,
-            samplePayloads: {},
-        }),
+        },
     },
     {
         id: 'touch-input',
         label: 'Board: touch input',
-        create: () => ({
+        samplePayloads: {
+            touchstart: {
+                points: [
+                    { ident: 0, x: 100, y: 200 },
+                    { ident: 1, x: 300, y: 200 },
+                ],
+            },
+            touchmove: {
+                points: [
+                    { ident: 0, x: 110, y: 210 },
+                    { ident: 1, x: 310, y: 210 },
+                ],
+            },
+            touchend: {
+                points: [
+                    { ident: 0, x: 110, y: 210 },
+                    { ident: 1, x: 310, y: 210 },
+                ],
+            },
+        },
+        source: {
+            kind: 'simulated',
             // No DummyTouchContext ships in @ue-too/board (unlike kmt's Dummy
             // context), but TouchContext's only non-trivial member is a
             // Canvas, and DummyCanvas already covers that. TouchInputTracker
@@ -130,29 +175,10 @@ export const registry: RegistryEntry[] = [
             // stubs cleanly and keeps the guarded IDLE->PENDING->IN_PROGRESS
             // transitions (which depend on tracked touch-point count/state)
             // actually functional for the demo.
-            machine: createTouchInputStateMachine(
-                new TouchInputTracker(new DummyCanvas())
-            ) as unknown as StateMachine<any, any, any, any>,
-            samplePayloads: {
-                touchstart: {
-                    points: [
-                        { ident: 0, x: 100, y: 200 },
-                        { ident: 1, x: 300, y: 200 },
-                    ],
-                },
-                touchmove: {
-                    points: [
-                        { ident: 0, x: 110, y: 210 },
-                        { ident: 1, x: 310, y: 210 },
-                    ],
-                },
-                touchend: {
-                    points: [
-                        { ident: 0, x: 110, y: 210 },
-                        { ident: 1, x: 310, y: 210 },
-                    ],
-                },
-            },
-        }),
+            create: () =>
+                createTouchInputStateMachine(
+                    new TouchInputTracker(new DummyCanvas())
+                ) as unknown as StateMachine<any, any, any, any>,
+        },
     },
 ];
