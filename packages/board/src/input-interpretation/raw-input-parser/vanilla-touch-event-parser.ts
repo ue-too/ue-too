@@ -29,6 +29,17 @@ export interface TouchEventParser {
     disable(): void;
     /** Enables the parser */
     enable(): void;
+    /**
+     * The state machine this parser dispatches into, when the implementation
+     * exposes one. Optional so existing external parser implementations
+     * remain valid, but note this member is typed to the full
+     * `TouchInputStateMachine` — unlike
+     * {@link KMTEventParser.stateMachine}'s minimal `{ happens }` contract,
+     * an external implementation is more likely to need adjustment to
+     * satisfy this member's shape. Intended for tooling/introspection —
+     * dispatch through the parser, not through this reference.
+     */
+    readonly stateMachine?: TouchInputStateMachine;
 }
 
 /**
@@ -109,6 +120,10 @@ export class VanillaTouchEventParser implements TouchEventParser {
 
     get orchestrator(): InputOrchestrator {
         return this._orchestrator;
+    }
+
+    get stateMachine(): TouchInputStateMachine {
+        return this._stateMachine;
     }
 
     bindListeners(): void {

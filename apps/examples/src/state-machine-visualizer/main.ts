@@ -13,6 +13,8 @@ const machineSelect = document.getElementById(
     'machine-select'
 ) as HTMLSelectElement;
 const currentStateEl = document.getElementById('current-state')!;
+const liveBadgeEl = document.getElementById('live-badge')!;
+const focusHintEl = document.getElementById('focus-hint')!;
 const panelErrorEl = document.getElementById('panel-error')!;
 const eventRowsEl = document.getElementById('event-rows')!;
 const eventLogEl = document.getElementById('event-log')!;
@@ -20,6 +22,7 @@ const resetBtn = document.getElementById('reset-btn') as HTMLButtonElement;
 const contextViewEl = document.getElementById('context-view')!;
 
 let machine: StateMachine<any, any, any, any> | null = null;
+let currentEntry: RegistryEntry | null = null;
 let layout: LaidOutGraph | null = null;
 let flash: Flash = null;
 
@@ -109,13 +112,37 @@ function serializeContext(context: unknown): string {
 
 let lastContextText: string | null = null;
 
-function appendLog(text: string): void {
+let lastLogEntry: { key: string; count: number; li: HTMLLIElement } | null =
+    null;
+
+/**
+ * Appends a log line. When `key` matches the previous line's key, the
+ * existing line is updated with a ×N counter instead of a new one being
+ * added — without this, a live board machine's ~60Hz pointerMove stream
+ * evicts the whole log in about three seconds of panning.
+ */
+function appendLog(text: string, key?: string): void {
+    if (
+        key !== undefined &&
+        lastLogEntry !== null &&
+        lastLogEntry.key === key
+    ) {
+        lastLogEntry.count += 1;
+        lastLogEntry.li.textContent = `${text} ×${lastLogEntry.count}`;
+        return;
+    }
     const li = document.createElement('li');
     li.textContent = text;
     eventLogEl.prepend(li);
+    lastLogEntry = key === undefined ? null : { key, count: 1, li };
     while (eventLogEl.children.length > MAX_LOG_ENTRIES) {
         eventLogEl.lastChild!.remove();
     }
+}
+
+function clearLog(): void {
+    eventLogEl.textContent = '';
+    lastLogEntry = null;
 }
 
 function findTakenEdgeIndex(from: string, event: string, to: string): number {
@@ -135,6 +162,74 @@ function findTakenEdgeIndex(from: string, event: string, to: string): number {
     return fallback;
 }
 
+let subscriptions: (() => void)[] = [];
+
+function disposeSubscriptions(): void {
+    for (const dispose of subscriptions) {
+        dispose();
+    }
+    subscriptions = [];
+}
+
+/**
+ * Logs and flashes every event the machine handles, whoever fired it — a
+ * ⚡ button in this panel or genuine input on the canvas. Runs after the
+ * state has handled the event but before the transition, so
+ * `machine.currentState` is still the source state.
+ */
+function subscribeToMachine(target: StateMachine<any, any, any, any>): void {
+    // onEventResult is optional on the StateMachine interface — an external
+    // implementation is not required to provide it. Without it there is no
+    // path to the log, the flash, or the coalescing counter, so say so
+    // instead of leaving the panel silently inert.
+    if (typeof target.onEventResult !== 'function') {
+        appendLog(
+            '(this machine does not expose onEventResult — no event log)'
+        );
+        return;
+    }
+    const dispose = target.onEventResult((args, result) => {
+        const event = String(args[0]);
+        const payloadText =
+            args[1] === undefined ? '' : ` ${JSON.stringify(args[1])}`;
+        const before = String(target.currentState);
+        if (!result.handled) {
+            // `!unhandled` / `!noop` are sentinels that cannot collide with
+            // a real state name (unlike the transition branch below, which
+            // interpolates one), so a state literally named "unhandled" or
+            // "noop" can't coalesce into this line by accident.
+            appendLog(
+                `${event}${payloadText} → not handled`,
+                `${event}|${before}|!unhandled`
+            );
+            return;
+        }
+        const after =
+            result.nextState === undefined ? before : String(result.nextState);
+        if (after === before) {
+            appendLog(
+                `${event}${payloadText} → handled, no transition`,
+                `${event}|${before}|!noop`
+            );
+        } else {
+            appendLog(
+                `${event}${payloadText} → ${before} ➜ ${after}`,
+                `${event}|${before}|${after}`
+            );
+        }
+        const edgeIndex = findTakenEdgeIndex(before, event, after);
+        if (edgeIndex !== -1) {
+            flash = { edgeIndex, at: performance.now() };
+        }
+    });
+    // The interface declares the return as `void | (() => void)` so external
+    // implementations stay valid, and TypeScript will not narrow a `void`
+    // union by truthiness — check for a function explicitly.
+    if (typeof dispose === 'function') {
+        subscriptions.push(dispose);
+    }
+}
+
 function fireEvent(
     event: string,
     payloadText: string,
@@ -151,25 +246,12 @@ function fireEvent(
         errorEl.textContent = `Invalid JSON: ${String(error)}`;
         return;
     }
-    const before = String(machine.currentState);
-    let result: { handled: boolean };
     try {
-        result = (machine.happens as any)(event, payload);
+        (machine.happens as any)(event, payload);
     } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         errorEl.textContent = `Action threw: ${message}`;
         appendLog(`${event} ${payloadText} → action threw: ${message}`);
-        return;
-    }
-    if (result.handled) {
-        const after = String(machine.currentState);
-        appendLog(`${event} ${payloadText} → ${before} ➜ ${after}`);
-        const edgeIndex = findTakenEdgeIndex(before, event, after);
-        if (edgeIndex !== -1) {
-            flash = { edgeIndex, at: performance.now() };
-        }
-    } else {
-        appendLog(`${event} ${payloadText} → not handled`);
     }
 }
 
@@ -206,21 +288,39 @@ function buildEventRows(samplePayloads: Record<string, unknown>): void {
     }
 }
 
+function createMachineFor(
+    entry: RegistryEntry
+): StateMachine<any, any, any, any> {
+    return entry.source.kind === 'simulated'
+        ? entry.source.create()
+        : entry.source.resolve(board);
+}
+
 function selectMachine(entry: RegistryEntry): void {
     if (machine) {
-        machine.wrapup();
+        // Never wrap up a live machine: wrapup() parks it in TERMINAL, after
+        // which happens() returns early forever and the real board stops
+        // responding to all input.
+        if (currentEntry?.source.kind === 'simulated') {
+            machine.wrapup();
+        }
+        disposeSubscriptions();
         machine = null;
         layout = null;
         eventRowsEl.textContent = '';
     }
+    currentEntry = entry;
+    const isLive = entry.source.kind === 'live';
+    liveBadgeEl.hidden = !isLive;
+    focusHintEl.hidden = !isLive;
     panelErrorEl.textContent = '';
     try {
-        const created = entry.create();
-        machine = created.machine;
-        layout = layoutGraph(extractMachineGraph(created.machine), measureText);
+        machine = createMachineFor(entry);
+        subscribeToMachine(machine);
+        layout = layoutGraph(extractMachineGraph(machine), measureText);
         flash = null;
-        buildEventRows(created.samplePayloads);
-        eventLogEl.textContent = '';
+        buildEventRows(entry.samplePayloads);
+        clearLog();
         appendLog(`loaded ${entry.label}`);
     } catch (error) {
         layout = null;
@@ -245,6 +345,10 @@ selectMachine(registry[0]);
 
 resetBtn.addEventListener('click', () => {
     if (machine) {
+        // reset() deliberately round-trips through TERMINAL and restarts —
+        // this is the intended recovery for a live machine stranded by a
+        // hand-fired half-gesture, not the permanent parking that a stray
+        // wrapup() would cause.
         machine.reset();
         flash = null;
         appendLog('machine reset');

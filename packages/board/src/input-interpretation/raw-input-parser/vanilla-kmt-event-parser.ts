@@ -1,8 +1,6 @@
 import type { EventArgs, EventResult } from '@ue-too/being';
 
-import type {
-    KmtInputEventMapping,
-} from '../../input-interpretation/input-state-machine';
+import type { KmtInputEventMapping } from '../../input-interpretation/input-state-machine';
 import type { InputOrchestrator } from '../input-orchestrator';
 
 /**
@@ -28,6 +26,16 @@ export interface KMTEventParser {
     disable(): void;
     /** Enables the parser */
     enable(): void;
+    /**
+     * The state machine this parser dispatches into, when the implementation
+     * exposes one. Optional so existing external parser implementations
+     * remain valid — typed to the minimal `{ happens }` contract this parser
+     * itself needs, so an external implementation satisfies this member
+     * without providing a full `being` `StateMachine`. Intended for
+     * tooling/introspection — dispatch through the parser, not through this
+     * reference.
+     */
+    readonly stateMachine?: StateMachine;
 }
 
 /**
@@ -381,6 +389,10 @@ export class VanillaKMTEventParser implements KMTEventParser {
         this.tearDown();
         this._canvas = canvas;
         this.setUp();
+    }
+
+    get stateMachine(): StateMachine {
+        return this._stateMachine;
     }
 
     set stateMachine(stateMachine: StateMachine) {

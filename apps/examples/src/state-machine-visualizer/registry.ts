@@ -1,158 +1,203 @@
 import { StateMachine, createVendingMachine } from '@ue-too/being';
-import {
-    DummyCanvas,
-    DummyKmtInputContext,
-    TouchInputTracker,
-    createDefaultPanControlStateMachine,
-    createDefaultRotateControlStateMachine,
-    createDefaultZoomControlStateMachine,
-    createKmtInputStateMachine,
-    createTouchInputStateMachine,
-} from '@ue-too/board';
+import { Board, CameraMuxWithAnimationAndLock } from '@ue-too/board';
 
 import { createAccountDemoMachine } from './account-demo';
+
+/**
+ * The board's camera-control machines live on the mux. Board types
+ * `cameraMux` as the CameraMux interface, which does not declare the three
+ * machine getters, so narrow to the concrete class the default Board builds.
+ *
+ * `instanceof` here (unlike `@ue-too/board`'s own structural check in
+ * `boardify/index.ts`, which deliberately avoids `instanceof` because a
+ * consumer resolving two copies of `@ue-too/being` would fail it against a
+ * perfectly valid machine) is acceptable in this app: it's a single Vite
+ * bundle with one copy of `@ue-too/board`, and a failed narrow throws here
+ * and is caught and surfaced in the panel rather than crashing the page.
+ */
+function cameraMuxOf(board: Board): CameraMuxWithAnimationAndLock {
+    const mux = board.cameraMux;
+    if (!(mux instanceof CameraMuxWithAnimationAndLock)) {
+        throw new Error(
+            'This board uses a custom CameraMux that does not expose camera control state machines.'
+        );
+    }
+    return mux;
+}
+
+/**
+ * Where a registry entry's machine comes from.
+ *
+ * - `simulated` constructs a fresh machine the page owns outright.
+ * - `live` borrows a machine already running inside the page's viewport
+ *   Board, so real input drives it. A live machine must never be left in
+ *   `TERMINAL` by the page: that is what stops the real board from
+ *   responding to input. (Reset is fine — `machine.reset()` round-trips
+ *   through `TERMINAL` and restarts, it doesn't leave it there. Reset is,
+ *   in fact, the recovery for a live machine stranded by a hand-fired
+ *   half-gesture.)
+ */
+export type MachineSource =
+    | { kind: 'simulated'; create(): StateMachine<any, any, any, any> }
+    | {
+          kind: 'live';
+          resolve(board: Board): StateMachine<any, any, any, any>;
+      };
 
 export type RegistryEntry = {
     id: string;
     label: string;
-    create(): {
-        machine: StateMachine<any, any, any, any>;
-        samplePayloads: Record<string, unknown>;
-    };
+    samplePayloads: Record<string, unknown>;
+    source: MachineSource;
 };
 
 export const registry: RegistryEntry[] = [
     {
         id: 'vending-machine',
         label: 'Vending machine (being example)',
-        create: () => ({
+        samplePayloads: {},
+        source: {
+            kind: 'simulated',
             // Concrete machines with literal-union States aren't
             // structurally assignable to StateMachine<any, any, any, any>:
             // State['states']'s conditional `string extends States ? string
             // : States` plus method variance defeats `any`-erasure. Confine
             // the cast to this registry boundary rather than loosening
             // `@ue-too/being`'s interfaces.
-            machine: createVendingMachine() as unknown as StateMachine<
-                any,
-                any,
-                any,
-                any
-            >,
-            samplePayloads: {},
-        }),
+            create: () =>
+                createVendingMachine() as unknown as StateMachine<
+                    any,
+                    any,
+                    any,
+                    any
+                >,
+        },
     },
     {
         id: 'account-demo',
         label: 'Bank account (preconditions demo)',
-        create: () => ({
-            machine: createAccountDemoMachine() as unknown as StateMachine<
-                any,
-                any,
-                any,
-                any
-            >,
-            samplePayloads: {
-                withdraw: { amount: 60 },
-                deposit: { amount: 50 },
-            },
-        }),
+        samplePayloads: {
+            withdraw: { amount: 60 },
+            deposit: { amount: 50 },
+        },
+        source: {
+            kind: 'simulated',
+            create: () =>
+                createAccountDemoMachine() as unknown as StateMachine<
+                    any,
+                    any,
+                    any,
+                    any
+                >,
+        },
     },
     {
         id: 'kmt-input',
-        label: 'Board: keyboard/mouse input',
-        create: () => ({
-            machine: createKmtInputStateMachine(
-                new DummyKmtInputContext()
-            ) as unknown as StateMachine<any, any, any, any>,
-            samplePayloads: {
-                leftPointerDown: { x: 100, y: 100 },
-                leftPointerUp: { x: 100, y: 100 },
-                leftPointerMove: { x: 120, y: 110 },
-                middlePointerDown: { x: 100, y: 100 },
-                middlePointerUp: { x: 100, y: 100 },
-                middlePointerMove: { x: 120, y: 110 },
-                pointerMove: { x: 120, y: 110 },
-                scroll: { deltaX: 0, deltaY: -100, x: 100, y: 100 },
-                scrollWithCtrl: { deltaX: 0, deltaY: -100, x: 100, y: 100 },
+        label: 'Board: keyboard/mouse input (live)',
+        samplePayloads: {
+            leftPointerDown: { x: 100, y: 100 },
+            leftPointerUp: { x: 100, y: 100 },
+            leftPointerMove: { x: 120, y: 110 },
+            middlePointerDown: { x: 100, y: 100 },
+            middlePointerUp: { x: 100, y: 100 },
+            middlePointerMove: { x: 120, y: 110 },
+            pointerMove: { x: 120, y: 110 },
+            scroll: { deltaX: 0, deltaY: -100, x: 100, y: 100 },
+            scrollWithCtrl: { deltaX: 0, deltaY: -100, x: 100, y: 100 },
+        },
+        source: {
+            kind: 'live',
+            resolve: board => {
+                const machine = board.kmtInputStateMachine;
+                if (machine === undefined) {
+                    throw new Error(
+                        'This board’s KMT parser does not expose a state machine.'
+                    );
+                }
+                return machine as unknown as StateMachine<any, any, any, any>;
             },
-        }),
+        },
     },
     {
         id: 'pan-control',
-        label: 'Board: pan control',
-        create: () => ({
-            machine:
-                createDefaultPanControlStateMachine() as unknown as StateMachine<
+        label: 'Board: pan control (live)',
+        samplePayloads: {},
+        source: {
+            kind: 'live',
+            resolve: board =>
+                cameraMuxOf(board).panStateMachine as unknown as StateMachine<
                     any,
                     any,
                     any,
                     any
                 >,
-            samplePayloads: {},
-        }),
+        },
     },
     {
         id: 'zoom-control',
-        label: 'Board: zoom control',
-        create: () => ({
-            machine:
-                createDefaultZoomControlStateMachine() as unknown as StateMachine<
+        label: 'Board: zoom control (live)',
+        samplePayloads: {},
+        source: {
+            kind: 'live',
+            resolve: board =>
+                cameraMuxOf(board).zoomStateMachine as unknown as StateMachine<
                     any,
                     any,
                     any,
                     any
                 >,
-            samplePayloads: {},
-        }),
+        },
     },
     {
         id: 'rotation-control',
-        label: 'Board: rotation control',
-        create: () => ({
-            machine:
-                createDefaultRotateControlStateMachine() as unknown as StateMachine<
+        label: 'Board: rotation control (live)',
+        samplePayloads: {},
+        source: {
+            kind: 'live',
+            resolve: board =>
+                cameraMuxOf(board)
+                    .rotateStateMachine as unknown as StateMachine<
                     any,
                     any,
                     any,
                     any
                 >,
-            samplePayloads: {},
-        }),
+        },
     },
     {
         id: 'touch-input',
-        label: 'Board: touch input',
-        create: () => ({
-            // No DummyTouchContext ships in @ue-too/board (unlike kmt's Dummy
-            // context), but TouchContext's only non-trivial member is a
-            // Canvas, and DummyCanvas already covers that. TouchInputTracker
-            // is otherwise a plain in-memory touch-point tracker, so it
-            // stubs cleanly and keeps the guarded IDLE->PENDING->IN_PROGRESS
-            // transitions (which depend on tracked touch-point count/state)
-            // actually functional for the demo.
-            machine: createTouchInputStateMachine(
-                new TouchInputTracker(new DummyCanvas())
-            ) as unknown as StateMachine<any, any, any, any>,
-            samplePayloads: {
-                touchstart: {
-                    points: [
-                        { ident: 0, x: 100, y: 200 },
-                        { ident: 1, x: 300, y: 200 },
-                    ],
-                },
-                touchmove: {
-                    points: [
-                        { ident: 0, x: 110, y: 210 },
-                        { ident: 1, x: 310, y: 210 },
-                    ],
-                },
-                touchend: {
-                    points: [
-                        { ident: 0, x: 110, y: 210 },
-                        { ident: 1, x: 310, y: 210 },
-                    ],
-                },
+        label: 'Board: touch input (live)',
+        samplePayloads: {
+            touchstart: {
+                points: [
+                    { ident: 0, x: 100, y: 200 },
+                    { ident: 1, x: 300, y: 200 },
+                ],
             },
-        }),
+            touchmove: {
+                points: [
+                    { ident: 0, x: 110, y: 210 },
+                    { ident: 1, x: 310, y: 210 },
+                ],
+            },
+            touchend: {
+                points: [
+                    { ident: 0, x: 110, y: 210 },
+                    { ident: 1, x: 310, y: 210 },
+                ],
+            },
+        },
+        source: {
+            kind: 'live',
+            resolve: board => {
+                const machine = board.touchInputStateMachine;
+                if (machine === undefined) {
+                    throw new Error(
+                        'This board’s touch parser does not expose a state machine.'
+                    );
+                }
+                return machine as unknown as StateMachine<any, any, any, any>;
+            },
+        },
     },
 ];

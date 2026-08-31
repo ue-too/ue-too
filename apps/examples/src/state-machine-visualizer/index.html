@@ -44,6 +44,17 @@
                 font-weight: 600;
                 margin-bottom: 12px;
             }
+            #live-badge {
+                color: #15803d;
+                font-size: 12px;
+                font-weight: 600;
+                margin-bottom: 4px;
+            }
+            #focus-hint {
+                color: #64748b;
+                font-size: 12px;
+                margin-bottom: 12px;
+            }
             #context-panel {
                 margin-bottom: 12px;
             }
@@ -111,6 +122,17 @@
                 <h1>State Machine Visualizer</h1>
                 <select id="machine-select"></select>
                 <div id="current-state"></div>
+                <div id="live-badge" hidden>
+                    ● LIVE — this machine is running the board you're panning.
+                    Firing events from this panel updates the diagram, but most
+                    of them won't move the camera itself — only real input (and
+                    spacebar) does that.
+                </div>
+                <div id="focus-hint" hidden>
+                    Spacebar reaches the board only while nothing on the page
+                    has keyboard focus. After using the dropdown above, click
+                    the diagram to hand focus back.
+                </div>
                 <details id="context-panel" open>
                     <summary>Context</summary>
                     <pre id="context-view"></pre>
