@@ -50,25 +50,31 @@ import {
 
 /**
  * Structurally checks whether a value has the shape `kmtInputStateMachine`
- * promises (`@ue-too/being`'s `StateMachine` surface), rather than only the
- * minimal `{ happens }` contract `KMTEventParser.stateMachine` is typed for.
+ * and `touchInputStateMachine` promise (`@ue-too/being`'s `StateMachine`
+ * surface), rather than only the minimal parser-level contract their
+ * respective `KMTEventParser.stateMachine` / `TouchEventParser.stateMachine`
+ * members are typed for.
  *
  * @remarks
- * A custom {@link KMTEventParser} implementation can install a `stateMachine`
- * that satisfies only the minimal parser-level contract without being a real
- * `being` state machine — the setter on {@link Board.kmtParser} is a
- * documented extension point, so that is reachable through the public API.
+ * A custom {@link KMTEventParser} or {@link TouchEventParser} implementation
+ * can install a `stateMachine` that satisfies only that parser-level
+ * contract without being a real `being` state machine — the setters on
+ * {@link Board.kmtParser} and {@link Board.touchParser} are documented
+ * extension points, so that is reachable through the public API. Checks
+ * `currentState`, `onStateChange`, `states`, and `possibleStates` — the
+ * members tooling built on top of these getters actually consumes (see
+ * `extractMachineGraph`, which reads both `states` and `possibleStates`).
  * A structural check (rather than `instanceof TemplateStateMachine`) is used
  * deliberately: a consumer that resolves two copies of `@ue-too/being` would
  * fail an `instanceof` check against a perfectly valid machine.
  */
-function hasBeingStateMachineShape(
-    value: unknown
-): value is KmtInputStateMachine {
+function hasBeingStateMachineShape<T>(value: unknown): value is T {
     return (
         typeof value === 'object' &&
         value !== null &&
         'currentState' in value &&
+        'states' in value &&
+        'possibleStates' in value &&
         typeof (value as { onStateChange?: unknown }).onStateChange ===
             'function'
     );
@@ -641,7 +647,9 @@ export default class Board {
      */
     get kmtInputStateMachine(): KmtInputStateMachine | undefined {
         const machine = this._kmtParser.stateMachine;
-        return hasBeingStateMachineShape(machine) ? machine : undefined;
+        return hasBeingStateMachineShape<KmtInputStateMachine>(machine)
+            ? machine
+            : undefined;
     }
 
     /**
@@ -670,11 +678,26 @@ export default class Board {
      * expose one.
      *
      * @remarks
-     * Intended for tooling/introspection. See {@link kmtInputStateMachine}
-     * for the same caveats.
+     * Intended for tooling/introspection — a visualizer reading
+     * `currentState` and `context`, for instance. Drive the board through
+     * real input or through the parser, not by dispatching here, and never
+     * call `wrapup()` on it: that parks the machine in `TERMINAL` and the
+     * board stops responding to all input.
+     *
+     * `TouchEventParser.stateMachine` is typed to the full
+     * `TouchInputStateMachine`, but a custom parser could still install a
+     * value that satisfies that type shape without behaving like a real
+     * `being` state machine at runtime (e.g. across a duck-typed adapter).
+     * This getter applies the same structural check as
+     * {@link kmtInputStateMachine} and returns `undefined` rather than
+     * handing back something that doesn't actually have `currentState` or
+     * `onStateChange`.
      */
     get touchInputStateMachine(): TouchInputStateMachine | undefined {
-        return this._touchParser.stateMachine;
+        const machine = this._touchParser.stateMachine;
+        return hasBeingStateMachineShape<TouchInputStateMachine>(machine)
+            ? machine
+            : undefined;
     }
 
     /**
