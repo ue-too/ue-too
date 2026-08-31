@@ -13,6 +13,8 @@ const machineSelect = document.getElementById(
     'machine-select'
 ) as HTMLSelectElement;
 const currentStateEl = document.getElementById('current-state')!;
+const liveBadgeEl = document.getElementById('live-badge')!;
+const focusHintEl = document.getElementById('focus-hint')!;
 const panelErrorEl = document.getElementById('panel-error')!;
 const eventRowsEl = document.getElementById('event-rows')!;
 const eventLogEl = document.getElementById('event-log')!;
@@ -294,6 +296,9 @@ function selectMachine(entry: RegistryEntry): void {
         eventRowsEl.textContent = '';
     }
     currentEntry = entry;
+    const isLive = entry.source.kind === 'live';
+    liveBadgeEl.hidden = !isLive;
+    focusHintEl.hidden = !isLive;
     panelErrorEl.textContent = '';
     try {
         machine = createMachineFor(entry);

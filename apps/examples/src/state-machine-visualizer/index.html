@@ -44,6 +44,17 @@
                 font-weight: 600;
                 margin-bottom: 12px;
             }
+            #live-badge {
+                color: #15803d;
+                font-size: 12px;
+                font-weight: 600;
+                margin-bottom: 4px;
+            }
+            #focus-hint {
+                color: #64748b;
+                font-size: 12px;
+                margin-bottom: 12px;
+            }
             #context-panel {
                 margin-bottom: 12px;
             }
@@ -111,6 +122,14 @@
                 <h1>State Machine Visualizer</h1>
                 <select id="machine-select"></select>
                 <div id="current-state"></div>
+                <div id="live-badge" hidden>
+                    ● LIVE — this machine is running the board behind this
+                    canvas
+                </div>
+                <div id="focus-hint" hidden>
+                    Click the canvas first: spacebar only reaches the board when
+                    focus is outside a text field.
+                </div>
                 <details id="context-panel" open>
                     <summary>Context</summary>
                     <pre id="context-view"></pre>
