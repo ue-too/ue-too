@@ -20,6 +20,7 @@ const resetBtn = document.getElementById('reset-btn') as HTMLButtonElement;
 const contextViewEl = document.getElementById('context-view')!;
 
 let machine: StateMachine<any, any, any, any> | null = null;
+let currentEntry: RegistryEntry | null = null;
 let layout: LaidOutGraph | null = null;
 let flash: Flash = null;
 
@@ -216,11 +217,17 @@ function createMachineFor(
 
 function selectMachine(entry: RegistryEntry): void {
     if (machine) {
-        machine.wrapup();
+        // Never wrap up a live machine: wrapup() parks it in TERMINAL, after
+        // which happens() returns early forever and the real board stops
+        // responding to all input.
+        if (currentEntry?.source.kind === 'simulated') {
+            machine.wrapup();
+        }
         machine = null;
         layout = null;
         eventRowsEl.textContent = '';
     }
+    currentEntry = entry;
     panelErrorEl.textContent = '';
     try {
         machine = createMachineFor(entry);

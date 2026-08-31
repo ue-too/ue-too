@@ -1,17 +1,22 @@
 import { StateMachine, createVendingMachine } from '@ue-too/being';
-import {
-    Board,
-    DummyCanvas,
-    DummyKmtInputContext,
-    TouchInputTracker,
-    createDefaultPanControlStateMachine,
-    createDefaultRotateControlStateMachine,
-    createDefaultZoomControlStateMachine,
-    createKmtInputStateMachine,
-    createTouchInputStateMachine,
-} from '@ue-too/board';
+import { Board, CameraMuxWithAnimationAndLock } from '@ue-too/board';
 
 import { createAccountDemoMachine } from './account-demo';
+
+/**
+ * The board's camera-control machines live on the mux. Board types
+ * `cameraMux` as the CameraMux interface, which does not declare the three
+ * machine getters, so narrow to the concrete class the default Board builds.
+ */
+function cameraMuxOf(board: Board): CameraMuxWithAnimationAndLock {
+    const mux = board.cameraMux;
+    if (!(mux instanceof CameraMuxWithAnimationAndLock)) {
+        throw new Error(
+            'This board uses a custom CameraMux that does not expose camera control state machines.'
+        );
+    }
+    return mux;
+}
 
 /**
  * Where a registry entry's machine comes from.
@@ -78,7 +83,7 @@ export const registry: RegistryEntry[] = [
     },
     {
         id: 'kmt-input',
-        label: 'Board: keyboard/mouse input',
+        label: 'Board: keyboard/mouse input (live)',
         samplePayloads: {
             leftPointerDown: { x: 100, y: 100 },
             leftPointerUp: { x: 100, y: 100 },
@@ -91,21 +96,26 @@ export const registry: RegistryEntry[] = [
             scrollWithCtrl: { deltaX: 0, deltaY: -100, x: 100, y: 100 },
         },
         source: {
-            kind: 'simulated',
-            create: () =>
-                createKmtInputStateMachine(
-                    new DummyKmtInputContext()
-                ) as unknown as StateMachine<any, any, any, any>,
+            kind: 'live',
+            resolve: board => {
+                const machine = board.kmtInputStateMachine;
+                if (machine === undefined) {
+                    throw new Error(
+                        'This board’s KMT parser does not expose a state machine.'
+                    );
+                }
+                return machine as unknown as StateMachine<any, any, any, any>;
+            },
         },
     },
     {
         id: 'pan-control',
-        label: 'Board: pan control',
+        label: 'Board: pan control (live)',
         samplePayloads: {},
         source: {
-            kind: 'simulated',
-            create: () =>
-                createDefaultPanControlStateMachine() as unknown as StateMachine<
+            kind: 'live',
+            resolve: board =>
+                cameraMuxOf(board).panStateMachine as unknown as StateMachine<
                     any,
                     any,
                     any,
@@ -115,12 +125,12 @@ export const registry: RegistryEntry[] = [
     },
     {
         id: 'zoom-control',
-        label: 'Board: zoom control',
+        label: 'Board: zoom control (live)',
         samplePayloads: {},
         source: {
-            kind: 'simulated',
-            create: () =>
-                createDefaultZoomControlStateMachine() as unknown as StateMachine<
+            kind: 'live',
+            resolve: board =>
+                cameraMuxOf(board).zoomStateMachine as unknown as StateMachine<
                     any,
                     any,
                     any,
@@ -130,12 +140,13 @@ export const registry: RegistryEntry[] = [
     },
     {
         id: 'rotation-control',
-        label: 'Board: rotation control',
+        label: 'Board: rotation control (live)',
         samplePayloads: {},
         source: {
-            kind: 'simulated',
-            create: () =>
-                createDefaultRotateControlStateMachine() as unknown as StateMachine<
+            kind: 'live',
+            resolve: board =>
+                cameraMuxOf(board)
+                    .rotateStateMachine as unknown as StateMachine<
                     any,
                     any,
                     any,
@@ -145,7 +156,7 @@ export const registry: RegistryEntry[] = [
     },
     {
         id: 'touch-input',
-        label: 'Board: touch input',
+        label: 'Board: touch input (live)',
         samplePayloads: {
             touchstart: {
                 points: [
@@ -167,18 +178,16 @@ export const registry: RegistryEntry[] = [
             },
         },
         source: {
-            kind: 'simulated',
-            // No DummyTouchContext ships in @ue-too/board (unlike kmt's Dummy
-            // context), but TouchContext's only non-trivial member is a
-            // Canvas, and DummyCanvas already covers that. TouchInputTracker
-            // is otherwise a plain in-memory touch-point tracker, so it
-            // stubs cleanly and keeps the guarded IDLE->PENDING->IN_PROGRESS
-            // transitions (which depend on tracked touch-point count/state)
-            // actually functional for the demo.
-            create: () =>
-                createTouchInputStateMachine(
-                    new TouchInputTracker(new DummyCanvas())
-                ) as unknown as StateMachine<any, any, any, any>,
+            kind: 'live',
+            resolve: board => {
+                const machine = board.touchInputStateMachine;
+                if (machine === undefined) {
+                    throw new Error(
+                        'This board’s touch parser does not expose a state machine.'
+                    );
+                }
+                return machine as unknown as StateMachine<any, any, any, any>;
+            },
         },
     },
 ];
