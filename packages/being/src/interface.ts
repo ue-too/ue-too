@@ -781,16 +781,20 @@ export class TemplateStateMachine<
         ) {
             return { handled: false };
         }
-        for (const callback of [...this._happensCallbacks]) {
-            callback(args, this._context);
+        if (this._happensCallbacks.length > 0) {
+            for (const callback of [...this._happensCallbacks]) {
+                callback(args, this._context);
+            }
         }
         const result = this._states[this._currentState].handles(
             args,
             this._context,
             this
         );
-        for (const callback of [...this._eventResultCallbacks]) {
-            callback(args, result, this._context);
+        if (this._eventResultCallbacks.length > 0) {
+            for (const callback of [...this._eventResultCallbacks]) {
+                callback(args, result, this._context);
+            }
         }
         if (
             result.handled &&
@@ -810,8 +814,10 @@ export class TemplateStateMachine<
                 this,
                 originalState
             );
-            for (const callback of [...this._stateChangeCallbacks]) {
-                callback(originalState, this._currentState);
+            if (this._stateChangeCallbacks.length > 0) {
+                for (const callback of [...this._stateChangeCallbacks]) {
+                    callback(originalState, this._currentState);
+                }
             }
         }
         return result;
