@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 import Board from '../../src/boardify';
+import {
+    DummyKmtInputContext,
+    createKmtInputStateMachine,
+} from '../../src/input-interpretation/input-state-machine';
 import { VanillaKMTEventParser } from '../../src/input-interpretation/raw-input-parser';
 
 // Board's CanvasProxy constructs ResizeObserver/IntersectionObserver/MutationObserver
@@ -46,7 +50,9 @@ describe('Board state machine getters', () => {
     it('follows a swapped parser rather than caching the original machine', () => {
         const board = new Board();
         const original = board.kmtInputStateMachine;
-        const replacement = { happens: () => ({ handled: false as const }) };
+        const replacement = createKmtInputStateMachine(
+            new DummyKmtInputContext()
+        );
         // The parser's addEventListeners returns early when it has no canvas,
         // so the setter's tearDown/setUp cycle is safe in a DOM-free runner.
         board.kmtParser = new VanillaKMTEventParser(
@@ -55,5 +61,19 @@ describe('Board state machine getters', () => {
         );
         expect(board.kmtInputStateMachine).not.toBe(original);
         expect(board.kmtInputStateMachine).toBe(replacement);
+    });
+
+    it('returns undefined when the installed parser holds a machine that only satisfies the minimal parser contract', () => {
+        const board = new Board();
+        const notABeingMachine = {
+            happens: () => ({ handled: false as const }),
+        };
+        // The parser's addEventListeners returns early when it has no canvas,
+        // so the setter's tearDown/setUp cycle is safe in a DOM-free runner.
+        board.kmtParser = new VanillaKMTEventParser(
+            notABeingMachine,
+            board.inputOrchestrator
+        );
+        expect(board.kmtInputStateMachine).toBeUndefined();
     });
 });

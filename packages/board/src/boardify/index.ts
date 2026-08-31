@@ -49,6 +49,32 @@ import {
 } from '../utils';
 
 /**
+ * Structurally checks whether a value has the shape `kmtInputStateMachine`
+ * promises (`@ue-too/being`'s `StateMachine` surface), rather than only the
+ * minimal `{ happens }` contract `KMTEventParser.stateMachine` is typed for.
+ *
+ * @remarks
+ * A custom {@link KMTEventParser} implementation can install a `stateMachine`
+ * that satisfies only the minimal parser-level contract without being a real
+ * `being` state machine — the setter on {@link Board.kmtParser} is a
+ * documented extension point, so that is reachable through the public API.
+ * A structural check (rather than `instanceof TemplateStateMachine`) is used
+ * deliberately: a consumer that resolves two copies of `@ue-too/being` would
+ * fail an `instanceof` check against a perfectly valid machine.
+ */
+function hasBeingStateMachineShape(
+    value: unknown
+): value is KmtInputStateMachine {
+    return (
+        typeof value === 'object' &&
+        value !== null &&
+        'currentState' in value &&
+        typeof (value as { onStateChange?: unknown }).onStateChange ===
+            'function'
+    );
+}
+
+/**
  * Main user-facing API class that provides an infinite canvas with pan, zoom, and rotate capabilities.
  *
  * The Board class is the primary entry point for using the board package. It integrates all subsystems
@@ -604,9 +630,18 @@ export default class Board {
      * real input or through the parser, not by dispatching here, and never
      * call `wrapup()` on it: that parks the machine in `TERMINAL` and the
      * board stops responding to all input.
+     *
+     * `KMTEventParser.stateMachine` is only typed for the minimal
+     * `{ happens }` contract the parser itself needs, so a custom parser can
+     * install a `stateMachine` that satisfies that contract without being a
+     * real `being` state machine. This getter structurally checks for the
+     * `being` `StateMachine` surface and returns `undefined` rather than
+     * handing back something that doesn't actually have `currentState` or
+     * `onStateChange`.
      */
     get kmtInputStateMachine(): KmtInputStateMachine | undefined {
-        return this._kmtParser.stateMachine as KmtInputStateMachine | undefined;
+        const machine = this._kmtParser.stateMachine;
+        return hasBeingStateMachineShape(machine) ? machine : undefined;
     }
 
     /**
