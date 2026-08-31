@@ -248,7 +248,7 @@ export interface StateMachine<
             EventOutputMapping
         >
     >;
-    onStateChange(callback: StateChangeCallback<States>): void;
+    onStateChange(callback: StateChangeCallback<States>): void | (() => void);
     possibleStates: States[];
     onHappens(
         callback: (
@@ -258,7 +258,15 @@ export interface StateMachine<
             >,
             context: Context
         ) => void
-    ): void;
+    ): void | (() => void);
+    /**
+     * Subscribe to every event result. Optional so existing StateMachine
+     * implementations remain valid; {@link TemplateStateMachine} always
+     * provides it. Returns a disposer on implementations that support one.
+     */
+    onEventResult?(
+        callback: EventResultCallback<EventPayloadMapping, Context, States>
+    ): void | (() => void);
     reset(): void;
     start(): void;
     wrapup(): void;
@@ -273,6 +281,28 @@ export interface StateMachine<
 export type StateChangeCallback<States extends string = 'IDLE'> = (
     currentState: States,
     nextState: States
+) => void;
+
+/**
+ * Callback invoked after a state has handled an event, with the event's
+ * full {@link EventResult}.
+ *
+ * @remarks
+ * Unlike {@link StateChangeCallback}, this fires for *every* dispatch that
+ * reaches a state — including a precondition veto (`{ handled: false }`)
+ * and a self-transition, neither of which triggers a state change. Intended
+ * for tooling/introspection; do not mutate the context from here.
+ *
+ * @category Types
+ */
+export type EventResultCallback<
+    EventPayloadMapping,
+    Context extends BaseContext,
+    States extends string,
+> = (
+    args: EventArgs<EventPayloadMapping, keyof EventPayloadMapping | string>,
+    result: EventResult<States, unknown>,
+    context: Context
 ) => void;
 
 /**
@@ -636,6 +666,11 @@ export class TemplateStateMachine<
         >,
         context: Context
     ) => void)[];
+    protected _eventResultCallbacks: EventResultCallback<
+        EventPayloadMapping,
+        Context,
+        States
+    >[];
     protected _timeouts: ReturnType<typeof setTimeout> | undefined = undefined;
     protected _initialState: States;
 
@@ -655,6 +690,7 @@ export class TemplateStateMachine<
         this._statesArray = Object.keys(states) as States[];
         this._stateChangeCallbacks = [];
         this._happensCallbacks = [];
+        this._eventResultCallbacks = [];
         if (autoStart) {
             this.start();
         }
@@ -721,14 +757,17 @@ export class TemplateStateMachine<
         ) {
             return { handled: false };
         }
-        this._happensCallbacks.forEach(callback =>
-            callback(args, this._context)
-        );
+        for (const callback of [...this._happensCallbacks]) {
+            callback(args, this._context);
+        }
         const result = this._states[this._currentState].handles(
             args,
             this._context,
             this
         );
+        for (const callback of [...this._eventResultCallbacks]) {
+            callback(args, result, this._context);
+        }
         if (
             result.handled &&
             result.nextState !== undefined &&
@@ -747,15 +786,21 @@ export class TemplateStateMachine<
                 this,
                 originalState
             );
-            for (const callback of this._stateChangeCallbacks) {
+            for (const callback of [...this._stateChangeCallbacks]) {
                 callback(originalState, this._currentState);
             }
         }
         return result;
     }
 
-    onStateChange(callback: StateChangeCallback<States>): void {
+    onStateChange(callback: StateChangeCallback<States>): () => void {
         this._stateChangeCallbacks.push(callback);
+        return () => {
+            const index = this._stateChangeCallbacks.indexOf(callback);
+            if (index !== -1) {
+                this._stateChangeCallbacks.splice(index, 1);
+            }
+        };
     }
 
     onHappens(
@@ -766,8 +811,26 @@ export class TemplateStateMachine<
             >,
             context: Context
         ) => void
-    ): void {
+    ): () => void {
         this._happensCallbacks.push(callback);
+        return () => {
+            const index = this._happensCallbacks.indexOf(callback);
+            if (index !== -1) {
+                this._happensCallbacks.splice(index, 1);
+            }
+        };
+    }
+
+    onEventResult(
+        callback: EventResultCallback<EventPayloadMapping, Context, States>
+    ): () => void {
+        this._eventResultCallbacks.push(callback);
+        return () => {
+            const index = this._eventResultCallbacks.indexOf(callback);
+            if (index !== -1) {
+                this._eventResultCallbacks.splice(index, 1);
+            }
+        };
     }
 
     get currentState(): States | 'INITIAL' | 'TERMINAL' {
