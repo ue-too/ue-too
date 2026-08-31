@@ -7,6 +7,13 @@ import { createAccountDemoMachine } from './account-demo';
  * The board's camera-control machines live on the mux. Board types
  * `cameraMux` as the CameraMux interface, which does not declare the three
  * machine getters, so narrow to the concrete class the default Board builds.
+ *
+ * `instanceof` here (unlike `@ue-too/board`'s own structural check in
+ * `boardify/index.ts`, which deliberately avoids `instanceof` because a
+ * consumer resolving two copies of `@ue-too/being` would fail it against a
+ * perfectly valid machine) is acceptable in this app: it's a single Vite
+ * bundle with one copy of `@ue-too/board`, and a failed narrow throws here
+ * and is caught and surfaced in the panel rather than crashing the page.
  */
 function cameraMuxOf(board: Board): CameraMuxWithAnimationAndLock {
     const mux = board.cameraMux;
@@ -23,9 +30,12 @@ function cameraMuxOf(board: Board): CameraMuxWithAnimationAndLock {
  *
  * - `simulated` constructs a fresh machine the page owns outright.
  * - `live` borrows a machine already running inside the page's viewport
- *   Board, so real input drives it. A live machine must never be
- *   `wrapup()`-ed by the page: that parks it in TERMINAL and the real board
- *   stops responding to input.
+ *   Board, so real input drives it. A live machine must never be left in
+ *   `TERMINAL` by the page: that is what stops the real board from
+ *   responding to input. (Reset is fine — `machine.reset()` round-trips
+ *   through `TERMINAL` and restarts, it doesn't leave it there. Reset is,
+ *   in fact, the recovery for a live machine stranded by a hand-fired
+ *   half-gesture.)
  */
 export type MachineSource =
     | { kind: 'simulated'; create(): StateMachine<any, any, any, any> }

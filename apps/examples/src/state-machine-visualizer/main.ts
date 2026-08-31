@@ -331,6 +331,10 @@ selectMachine(registry[0]);
 
 resetBtn.addEventListener('click', () => {
     if (machine) {
+        // reset() deliberately round-trips through TERMINAL and restarts —
+        // this is the intended recovery for a live machine stranded by a
+        // hand-fired half-gesture, not the permanent parking that a stray
+        // wrapup() would cause.
         machine.reset();
         flash = null;
         appendLog('machine reset');
