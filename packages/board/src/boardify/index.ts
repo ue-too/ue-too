@@ -21,7 +21,9 @@ import { InputOrchestrator } from '../input-interpretation/input-orchestrator';
 import {
     CanvasDimensions,
     CanvasProxy,
+    KmtInputStateMachine,
     ObservableInputTracker,
+    TouchInputStateMachine,
     TouchInputTracker,
     createKmtInputStateMachine,
     createTouchInputStateMachine,
@@ -589,6 +591,25 @@ export default class Board {
     }
 
     /**
+     * The keyboard/mouse/trackpad input state machine currently driving the
+     * board, read from the active parser so it stays correct after a
+     * {@link kmtParser} swap.
+     *
+     * @returns The machine, or `undefined` when a custom parser does not
+     * expose one.
+     *
+     * @remarks
+     * Intended for tooling/introspection — a visualizer reading
+     * `currentState` and `context`, for instance. Drive the board through
+     * real input or through the parser, not by dispatching here, and never
+     * call `wrapup()` on it: that parks the machine in `TERMINAL` and the
+     * board stops responding to all input.
+     */
+    get kmtInputStateMachine(): KmtInputStateMachine | undefined {
+        return this._kmtParser.stateMachine as KmtInputStateMachine | undefined;
+    }
+
+    /**
      * @description The parser used to handle touch events. The default parser is the DefaultTouchParser.
      * You can have your own parser by implementing the BoardTouchParser interface.
      */
@@ -604,6 +625,21 @@ export default class Board {
 
     get touchParser(): TouchEventParser {
         return this._touchParser;
+    }
+
+    /**
+     * The touch input state machine currently driving the board, read from
+     * the active parser so it stays correct after a {@link touchParser} swap.
+     *
+     * @returns The machine, or `undefined` when a custom parser does not
+     * expose one.
+     *
+     * @remarks
+     * Intended for tooling/introspection. See {@link kmtInputStateMachine}
+     * for the same caveats.
+     */
+    get touchInputStateMachine(): TouchInputStateMachine | undefined {
+        return this._touchParser.stateMachine;
     }
 
     /**
