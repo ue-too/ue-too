@@ -652,7 +652,7 @@ Replace the top of `registry.ts` (the imports and the `RegistryEntry` type) with
 
 ```typescript
 import { StateMachine, createVendingMachine } from '@ue-too/being';
-import Board from '@ue-too/board';
+import { Board } from '@ue-too/board';
 
 import { createAccountDemoMachine } from './account-demo';
 
@@ -807,8 +807,13 @@ EOF
 In `registry.ts`, replace the `@ue-too/board` import with:
 
 ```typescript
-import Board, { CameraMuxWithAnimationAndLock } from '@ue-too/board';
+import { Board, CameraMuxWithAnimationAndLock } from '@ue-too/board';
 ```
+
+`Board` is a **named** export of `@ue-too/board` (`packages/board/src/index.ts:43`
+re-exports the default export of `boardify` under that name), so this is not a
+default import. Note the contrast with Task 2's test, which imports
+`../../src/boardify` directly and therefore does use a default import.
 
 `DummyCanvas`, `DummyKmtInputContext`, `TouchInputTracker`, `createKmtInputStateMachine`, `createTouchInputStateMachine`, `createDefaultPanControlStateMachine`, `createDefaultZoomControlStateMachine` and `createDefaultRotateControlStateMachine` are all no longer used — remove them. The long comment at the touch entry explaining how the touch context was stubbed goes too; there is nothing left to stub.
 
