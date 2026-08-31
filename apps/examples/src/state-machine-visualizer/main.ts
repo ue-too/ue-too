@@ -178,15 +178,29 @@ function disposeSubscriptions(): void {
  * `machine.currentState` is still the source state.
  */
 function subscribeToMachine(target: StateMachine<any, any, any, any>): void {
-    const dispose = target.onEventResult?.((args, result) => {
+    // onEventResult is optional on the StateMachine interface — an external
+    // implementation is not required to provide it. Without it there is no
+    // path to the log, the flash, or the coalescing counter, so say so
+    // instead of leaving the panel silently inert.
+    if (typeof target.onEventResult !== 'function') {
+        appendLog(
+            '(this machine does not expose onEventResult — no event log)'
+        );
+        return;
+    }
+    const dispose = target.onEventResult((args, result) => {
         const event = String(args[0]);
         const payloadText =
             args[1] === undefined ? '' : ` ${JSON.stringify(args[1])}`;
         const before = String(target.currentState);
         if (!result.handled) {
+            // `!unhandled` / `!noop` are sentinels that cannot collide with
+            // a real state name (unlike the transition branch below, which
+            // interpolates one), so a state literally named "unhandled" or
+            // "noop" can't coalesce into this line by accident.
             appendLog(
                 `${event}${payloadText} → not handled`,
-                `${event}|${before}|unhandled`
+                `${event}|${before}|!unhandled`
             );
             return;
         }
@@ -195,7 +209,7 @@ function subscribeToMachine(target: StateMachine<any, any, any, any>): void {
         if (after === before) {
             appendLog(
                 `${event}${payloadText} → handled, no transition`,
-                `${event}|${before}|noop`
+                `${event}|${before}|!noop`
             );
         } else {
             appendLog(
