@@ -33,9 +33,9 @@
         "@ue-too/math": "workspace:*"
     },
     "devDependencies": {
-        "pixi.js": "8.14.0"
+        "pixi.js": "8.20.1"
     },
     "peerDependencies": {
-        "pixi.js": "8.14.0"
+        "pixi.js": "8.20.1"
     }
 }

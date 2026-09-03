@@ -11,6 +11,6 @@
         "@ue-too/board": "workspace:*",
         "@ue-too/board-react-adapter": "workspace:*",
         "@ue-too/math": "workspace:*",
-        "pixi.js": "^8.14.3"
+        "pixi.js": "^8.20.1"
     }
 }

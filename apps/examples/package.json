@@ -28,7 +28,7 @@
         "@dagrejs/dagre": "1.1.5",
         "fabric": "7.4.0",
         "konva": "10.0.12",
-        "pixi.js": "8.14.0",
+        "pixi.js": "8.20.1",
         "dompurify": "^3.3.3"
     },
     "scripts": {

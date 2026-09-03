@@ -28,7 +28,7 @@
     "types": "./src/index.ts",
     "module": "./src/index.ts",
     "peerDependencies": {
-        "pixi.js": "8.14.0",
+        "pixi.js": "8.20.1",
         "react": "^19.0.1"
     },
     "dependencies": {
@@ -36,7 +36,7 @@
         "@ue-too/board": "workspace:*"
     },
     "devDependencies": {
-        "pixi.js": "8.14.0",
+        "pixi.js": "8.20.1",
         "react": "^19.0.1",
         "react-dom": "^19.0.1"
     }
