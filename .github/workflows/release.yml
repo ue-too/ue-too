@@ -77,7 +77,10 @@ jobs:
             - name: Replace workspace deps
               run: bun run replace-workspace-deps
             - name: Update npm
-              run: npm install -g npm@latest
+              # npm >= 11.5 is needed for OIDC trusted publishing; npm@latest is
+              # now 12.x, which requires Node >= 22.22 and fails on the pinned
+              # 22.19.0 with EBADENGINE. Pin the 11.x line.
+              run: npm install -g npm@11
             - name: Publish packages
               if: ${{ github.event.inputs.dry-run != 'true' }}
               run: npm run publish-packages -- ${{ github.event.inputs.dry-run == 'true' && '--dry-run' || '' }}
