@@ -39,3 +39,9 @@ export type {
     AttachedMachine,
     MachineLike,
 } from './registry';
+export {
+    KMT_SAMPLE_PAYLOADS,
+    TOUCH_SAMPLE_PAYLOADS,
+    resolveBoardMachines,
+} from './board';
+export type { BoardLike, BoardMachineEntry } from './board';
