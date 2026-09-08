@@ -3,8 +3,9 @@ export const MAX_CONTEXT_CHARS = 2000;
 
 /**
  * Pretty-prints a machine's context for the inspector: functions are
- * dropped, circular references become `"[circular]"`, and text beyond
- * `maxChars` is cut and marked with an ellipsis line.
+ * dropped, true circular references become `"[circular]"` (shared but
+ * acyclic sub-objects are serialized in full), and text beyond `maxChars`
+ * is cut and marked with an ellipsis line.
  *
  * @category Helpers
  */
@@ -15,21 +16,30 @@ export function serializeContext(
     if (context === undefined || context === null) {
         return '';
     }
-    const seen = new WeakSet<object>();
+    const ancestors: object[] = [];
     let text: string | undefined;
     try {
         text = JSON.stringify(
             context,
-            (_key, value: unknown) => {
+            function (this: unknown, _key: string, value: unknown) {
                 if (typeof value === 'function') {
                     return undefined;
                 }
-                if (typeof value === 'object' && value !== null) {
-                    if (seen.has(value)) {
-                        return '[circular]';
-                    }
-                    seen.add(value);
+                if (typeof value !== 'object' || value === null) {
+                    return value;
                 }
+                // Unwind to the object that owns `key`; anything deeper was a
+                // sibling branch we have already left.
+                while (
+                    ancestors.length > 0 &&
+                    ancestors[ancestors.length - 1] !== this
+                ) {
+                    ancestors.pop();
+                }
+                if (ancestors.includes(value)) {
+                    return '[circular]';
+                }
+                ancestors.push(value);
                 return value;
             },
             2

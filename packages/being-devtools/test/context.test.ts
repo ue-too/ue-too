@@ -22,6 +22,21 @@ describe('serializeContext', () => {
         expect(serializeContext(context)).toContain('"self": "[circular]"');
     });
 
+    it('serializes a shared but non-circular reference in full', () => {
+        const shared = { id: 7 };
+        const text = serializeContext({ a: shared, b: shared });
+        expect(text).not.toContain('[circular]');
+        expect(text).toBe(
+            '{\n  "a": {\n    "id": 7\n  },\n  "b": {\n    "id": 7\n  }\n}'
+        );
+    });
+
+    it('marks a cycle that closes through a nested object', () => {
+        const root: Record<string, unknown> = { name: 'root' };
+        root.child = { parent: root };
+        expect(serializeContext(root)).toContain('"parent": "[circular]"');
+    });
+
     it('truncates at the cap with an ellipsis line', () => {
         const context = { big: 'x'.repeat(MAX_CONTEXT_CHARS * 2) };
         const text = serializeContext(context);
