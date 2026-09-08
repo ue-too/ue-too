@@ -54,6 +54,7 @@ packages/
     board-konva-integration/
     board-fabric-integration/
     board-game-engine/
+    being-devtools/ — Attachable debugger panel for being machines (state chart, event log, context)
 
 apps/
     examples/       — Interactive demos (https://kinnet-studio.github.io/ue-too/)
