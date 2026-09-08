@@ -57,6 +57,9 @@
         },
         {
             "path": "./packages/board-pixi-react-integration"
+        },
+        {
+            "path": "./packages/being-devtools"
         }
     ]
 }
