@@ -17,36 +17,10 @@
  * events by hand. Ctrl+Shift+M (Cmd+Shift+M on macOS) toggles it.
  */
 
-export { layoutGraph } from './layout';
-export type { LaidOutEdge, LaidOutGraph, LaidOutNode } from './layout';
-export { drawGraph } from './render';
-export type { Flash } from './render';
-export { matchesHotkey, parseHotkey } from './hotkey';
-export type { HotkeyEventLike, ParsedHotkey } from './hotkey';
-export {
-    EventLog,
-    MAX_LOG_ENTRIES,
-    describeEventResult,
-    formatLogEntry,
-} from './log';
-export type { EventLine, LogChange, LogEntry } from './log';
-export { computeEnabledEdges } from './enabled';
-export { MAX_CONTEXT_CHARS, serializeContext } from './context';
-export { MachineRegistry } from './registry';
-export type {
-    AttachHandle,
-    AttachOptions,
-    AttachedMachine,
-    MachineLike,
-} from './registry';
-export {
-    KMT_SAMPLE_PAYLOADS,
-    TOUCH_SAMPLE_PAYLOADS,
-    resolveBoardMachines,
-} from './board';
-export type { BoardLike, BoardMachineEntry } from './board';
+export { attachBoardDebugger, attachMachineDebugger } from './attach';
 export { DEFAULT_HOTKEY, MachineDebugger } from './debugger';
 export type { MachineDebuggerOptions } from './debugger';
-export { attachBoardDebugger, attachMachineDebugger } from './attach';
+export type { AttachHandle, AttachOptions, MachineLike } from './registry';
+export type { BoardLike } from './board';
 export { HOOK_KEY } from './hook';
 export type { BeingDevtoolsHook } from './hook';

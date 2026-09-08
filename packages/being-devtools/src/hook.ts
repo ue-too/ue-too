@@ -1,9 +1,4 @@
-import {
-    AnyStateMachine,
-    AttachHandle,
-    AttachOptions,
-    MachineLike,
-} from './registry';
+import { AttachHandle, AttachOptions, MachineLike } from './registry';
 
 /** The property name installed on `window`. @category Types */
 export const HOOK_KEY = '__UE_TOO_BEING__';
@@ -12,7 +7,7 @@ export const HOOK_KEY = '__UE_TOO_BEING__';
 export type HookPanel = {
     open(): void;
     close(): void;
-    readonly machines: ReadonlyMap<string, AnyStateMachine>;
+    readonly machines: ReadonlyMap<string, MachineLike>;
 };
 
 /**
@@ -27,7 +22,7 @@ export type HookPanel = {
  * @category Types
  */
 export type BeingDevtoolsHook = {
-    readonly machines: ReadonlyMap<string, AnyStateMachine>;
+    readonly machines: ReadonlyMap<string, MachineLike>;
     open(): void;
     close(): void;
     attach(machine: MachineLike, options?: AttachOptions): AttachHandle;
@@ -55,7 +50,7 @@ function defaultTarget(): HookTarget | undefined {
 function createHook(): BeingDevtoolsHook {
     return {
         get machines() {
-            const all = new Map<string, AnyStateMachine>();
+            const all = new Map<string, MachineLike>();
             for (const panel of panels) {
                 for (const [name, machine] of panel.machines) {
                     all.set(name, machine);

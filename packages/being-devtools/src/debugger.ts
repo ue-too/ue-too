@@ -10,7 +10,6 @@ import { LaidOutGraph, layoutGraph } from './layout';
 import { EventLog, describeEventResult, formatLogEntry } from './log';
 import { PanelDom, createPanelDom } from './panel-dom';
 import {
-    AnyStateMachine,
     AttachHandle,
     AttachOptions,
     AttachedMachine,
@@ -144,8 +143,8 @@ export class MachineDebugger {
     }
 
     /** Name → machine for every attached machine. */
-    get machines(): ReadonlyMap<string, AnyStateMachine> {
-        const map = new Map<string, AnyStateMachine>();
+    get machines(): ReadonlyMap<string, MachineLike> {
+        const map = new Map<string, MachineLike>();
         for (const name of this.registry.names) {
             map.set(name, this.registry.get(name)!.machine);
         }

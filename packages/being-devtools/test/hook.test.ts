@@ -8,14 +8,14 @@ import {
     registerPanel,
     unregisterPanel,
 } from '../src/hook';
-import { AnyStateMachine } from '../src/registry';
+import { MachineLike } from '../src/registry';
 
 function fakePanel(
     names: string[]
 ): HookPanel & { opened: number; closed: number } {
-    const machines = new Map<string, AnyStateMachine>();
+    const machines = new Map<string, MachineLike>();
     for (const name of names) {
-        machines.set(name, { name } as unknown as AnyStateMachine);
+        machines.set(name, { name } as unknown as MachineLike);
     }
     return {
         opened: 0,
