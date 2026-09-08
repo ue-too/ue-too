@@ -1,3 +1,14 @@
+## 0.18.1 (2026-09-08)
+
+### 🚀 Features
+
+- **being-devtools:** attachable debugger panel for being machines ([#439](https://github.com/kinnet-studio/ue-too/pull/439), [#440](https://github.com/kinnet-studio/ue-too/pull/440))
+
+### ❤️ Thank You
+
+- Claude Fable 5.1
+- vee @niuee
+
 ## 0.18.0 (2026-09-03)
 
 ### 🚀 Features
