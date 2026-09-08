@@ -1,0 +1,64 @@
+{
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "name": "being-devtools",
+    "projectType": "library",
+    "sourceRoot": "packages/being-devtools/src",
+    "tags": [],
+    "targets": {
+        "build": {
+            "dependsOn": [
+                {
+                    "projects": ["being", "board"],
+                    "target": "build"
+                }
+            ],
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "rm -rf dist && bun run ../../scripts/build.ts --external @ue-too/being --external @ue-too/board --external @dagrejs/dagre",
+                "cwd": "packages/being-devtools"
+            }
+        },
+        "build:bun": {
+            "dependsOn": [
+                {
+                    "projects": ["being", "board"],
+                    "target": "build"
+                }
+            ],
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "rm -rf dist && bun run ../../scripts/build.ts --external @ue-too/being --external @ue-too/board --external @dagrejs/dagre",
+                "cwd": "packages/being-devtools"
+            }
+        },
+        "docs:build": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "bun run ../../scripts/docs-build-i18n.ts",
+                "cwd": "packages/being-devtools"
+            }
+        },
+        "move-package": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "node ../../scripts/move-package.mjs",
+                "cwd": "packages/being-devtools"
+            }
+        },
+        "nx-release-publish": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "node ../../../scripts/publish-package.mjs",
+                "cwd": "packages/being-devtools/dist",
+                "forwardAllArgs": false
+            }
+        },
+        "test": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "bun test",
+                "cwd": "packages/being-devtools"
+            }
+        }
+    }
+}

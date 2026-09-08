@@ -41,6 +41,9 @@
             "path": "../../packages/being"
         },
         {
+            "path": "../../packages/being-devtools"
+        },
+        {
             "path": "../../packages/animate"
         }
     ]

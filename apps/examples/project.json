@@ -3,6 +3,7 @@
     "implicitDependencies": [
         "math",
         "being",
+        "being-devtools",
         "animate",
         "border",
         "curve",
