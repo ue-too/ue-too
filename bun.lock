@@ -109,9 +109,9 @@
       "name": "@ue-too/examples",
       "version": "0.5.0",
       "dependencies": {
-        "@dagrejs/dagre": "1.1.5",
         "@ue-too/animate": "workspace:*",
         "@ue-too/being": "workspace:*",
+        "@ue-too/being-devtools": "workspace:*",
         "@ue-too/board": "workspace:*",
         "@ue-too/board-fabric-integration": "workspace:*",
         "@ue-too/board-konva-integration": "workspace:*",

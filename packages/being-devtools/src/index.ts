@@ -45,3 +45,5 @@ export {
     resolveBoardMachines,
 } from './board';
 export type { BoardLike, BoardMachineEntry } from './board';
+export { DEFAULT_HOTKEY, MachineDebugger } from './debugger';
+export type { MachineDebuggerOptions } from './debugger';
