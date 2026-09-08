@@ -358,7 +358,7 @@ export class MachineDebugger {
      * If the machine's `onEventResult` returns no disposer, the callback
      * cannot be removed; it goes inert instead once the tab is detached or
      * the panel is disposed. The callback never throws into the host: any
-     * error raised while logging or flashing is swallowed, so devotools
+     * error raised while logging or flashing is swallowed, so devtools
      * can never abort the host machine's transition.
      */
     private subscribe(tab: Tab): (() => void) | undefined {
