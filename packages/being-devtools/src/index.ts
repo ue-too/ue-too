@@ -21,3 +21,5 @@ export { layoutGraph } from './layout';
 export type { LaidOutEdge, LaidOutGraph, LaidOutNode } from './layout';
 export { drawGraph } from './render';
 export type { Flash } from './render';
+export { matchesHotkey, parseHotkey } from './hotkey';
+export type { HotkeyEventLike, ParsedHotkey } from './hotkey';
