@@ -30,3 +30,5 @@ export {
     formatLogEntry,
 } from './log';
 export type { EventLine, LogChange, LogEntry } from './log';
+export { computeEnabledEdges } from './enabled';
+export { MAX_CONTEXT_CHARS, serializeContext } from './context';
