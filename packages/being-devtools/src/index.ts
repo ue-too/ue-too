@@ -23,3 +23,10 @@ export { drawGraph } from './render';
 export type { Flash } from './render';
 export { matchesHotkey, parseHotkey } from './hotkey';
 export type { HotkeyEventLike, ParsedHotkey } from './hotkey';
+export {
+    EventLog,
+    MAX_LOG_ENTRIES,
+    describeEventResult,
+    formatLogEntry,
+} from './log';
+export type { EventLine, LogChange, LogEntry } from './log';
