@@ -47,3 +47,6 @@ export {
 export type { BoardLike, BoardMachineEntry } from './board';
 export { DEFAULT_HOTKEY, MachineDebugger } from './debugger';
 export type { MachineDebuggerOptions } from './debugger';
+export { attachBoardDebugger, attachMachineDebugger } from './attach';
+export { HOOK_KEY } from './hook';
+export type { BeingDevtoolsHook } from './hook';

@@ -4,6 +4,7 @@ import { Board } from '@ue-too/board';
 import { BoardLike, resolveBoardMachines } from './board';
 import { serializeContext } from './context';
 import { computeEnabledEdges } from './enabled';
+import { registerPanel, unregisterPanel } from './hook';
 import { ParsedHotkey, matchesHotkey, parseHotkey } from './hotkey';
 import { LaidOutGraph, layoutGraph } from './layout';
 import { EventLog, describeEventResult, formatLogEntry } from './log';
@@ -115,6 +116,7 @@ export class MachineDebugger {
         );
         window.addEventListener('keydown', this.onKeyDown);
         this.dom.setCount(0);
+        registerPanel(this);
         this.select(null);
         const openByDefault =
             options.openByDefault ?? options.container !== undefined;
@@ -244,6 +246,7 @@ export class MachineDebugger {
         }
         this.close();
         this.disposed = true;
+        unregisterPanel(this);
         window.removeEventListener('keydown', this.onKeyDown);
         this.registry.detachAll();
         this.tabs.clear();
