@@ -108,4 +108,27 @@ describe('describeEventResult', () => {
         expect(line.before).toBe('RUNNING');
         expect(line.after).toBe('IDLE');
     });
+
+    it('falls back to a placeholder for a cyclic payload instead of throwing', () => {
+        const cyclic: Record<string, unknown> = {};
+        cyclic.self = cyclic;
+        expect(() =>
+            describeEventResult('tick', cyclic, 'RUNNING', { handled: true })
+        ).not.toThrow();
+        const line = describeEventResult('tick', cyclic, 'RUNNING', {
+            handled: true,
+        });
+        expect(line.text).toContain('[unserializable payload]');
+    });
+
+    it('falls back to a placeholder for a BigInt payload instead of throwing', () => {
+        const payload = { amount: 10n };
+        expect(() =>
+            describeEventResult('tick', payload, 'RUNNING', { handled: true })
+        ).not.toThrow();
+        const line = describeEventResult('tick', payload, 'RUNNING', {
+            handled: true,
+        });
+        expect(line.text).toContain('[unserializable payload]');
+    });
 });

@@ -88,6 +88,20 @@ export type EventLine = {
 };
 
 /**
+ * `JSON.stringify`, but never throws: a cyclic reference or a `BigInt`
+ * (both of which `JSON.stringify` rejects) falls back to a placeholder
+ * instead of propagating into the caller.
+ */
+function safeStringify(value: unknown): string {
+    try {
+        const text = JSON.stringify(value);
+        return text === undefined ? String(value) : text;
+    } catch {
+        return '[unserializable payload]';
+    }
+}
+
+/**
  * Turns one `onEventResult` callback into a log line and a coalescing key.
  *
  * @remarks
@@ -104,7 +118,7 @@ export function describeEventResult(
     result: EventResult<string, unknown>
 ): EventLine {
     const payloadText =
-        payload === undefined ? '' : ` ${JSON.stringify(payload)}`;
+        payload === undefined ? '' : ' ' + safeStringify(payload);
     if (!result.handled) {
         return {
             event,

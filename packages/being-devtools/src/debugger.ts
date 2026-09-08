@@ -101,20 +101,22 @@ export class MachineDebugger {
     private lastContextText: string | null = null;
 
     constructor(options: MachineDebuggerOptions = {}) {
-        this.dom = createPanelDom({ container: options.container });
-        this.graphBoard = new Board();
-        this.graphBoard.attach(this.dom.canvas);
-        this.measureCtx = document.createElement('canvas').getContext('2d')!;
         this.hotkey =
             options.hotkey === false
                 ? null
                 : parseHotkey(options.hotkey ?? DEFAULT_HOTKEY);
+        this.dom = createPanelDom({ container: options.container });
+        this.graphBoard = new Board();
+        this.graphBoard.attach(this.dom.canvas);
+        this.measureCtx = document.createElement('canvas').getContext('2d')!;
         this.dom.pill.addEventListener('click', () => this.open());
         this.dom.closeButton.addEventListener('click', () => this.close());
         this.dom.resetButton.addEventListener('click', () =>
             this.resetSelected()
         );
-        window.addEventListener('keydown', this.onKeyDown);
+        if (this.hotkey !== null) {
+            window.addEventListener('keydown', this.onKeyDown);
+        }
         this.dom.setCount(0);
         registerPanel(this);
         this.select(null);
@@ -164,7 +166,13 @@ export class MachineDebugger {
         if (this.selected === null) {
             this.select(entry.name);
         }
-        return { dispose: () => this.detach(entry.name) };
+        return {
+            dispose: () => {
+                if (this.tabs.get(entry.name)?.entry === entry) {
+                    this.detach(entry.name);
+                }
+            },
+        };
     }
 
     /**
@@ -350,7 +358,9 @@ export class MachineDebugger {
      * @remarks
      * If the machine's `onEventResult` returns no disposer, the callback
      * cannot be removed; it goes inert instead once the tab is detached or
-     * the panel is disposed.
+     * the panel is disposed. The callback never throws into the host: any
+     * error raised while logging or flashing is swallowed, so devotools
+     * can never abort the host machine's transition.
      */
     private subscribe(tab: Tab): (() => void) | undefined {
         const { machine } = tab.entry;
@@ -358,30 +368,41 @@ export class MachineDebugger {
         if (layout === null || typeof machine.onEventResult !== 'function') {
             return undefined;
         }
-        const dispose = machine.onEventResult((args, result) => {
-            if (this.disposed || this.tabs.get(tab.entry.name) !== tab) {
-                return;
-            }
-            const before = String(machine.currentState);
-            const line = describeEventResult(
-                String(args[0]),
-                args[1],
-                before,
-                result
-            );
-            this.appendLog(tab, line.text, line.key);
-            if (line.handled) {
-                const edgeIndex = findTakenEdgeIndex(
-                    layout,
-                    before,
-                    line.event,
-                    line.after
-                );
-                if (edgeIndex !== -1) {
-                    tab.flash = { edgeIndex, at: performance.now() };
+        let dispose: void | (() => void);
+        try {
+            dispose = machine.onEventResult((args, result) => {
+                if (this.disposed || this.tabs.get(tab.entry.name) !== tab) {
+                    return;
                 }
-            }
-        });
+                try {
+                    const before = String(machine.currentState);
+                    const line = describeEventResult(
+                        String(args[0]),
+                        args[1],
+                        before,
+                        result
+                    );
+                    this.appendLog(tab, line.text, line.key);
+                    if (line.handled) {
+                        const edgeIndex = findTakenEdgeIndex(
+                            layout,
+                            before,
+                            line.event,
+                            line.after
+                        );
+                        if (edgeIndex !== -1) {
+                            tab.flash = { edgeIndex, at: performance.now() };
+                        }
+                    }
+                } catch {
+                    /* devtools must never break the host machine */
+                }
+            });
+        } catch (error) {
+            tab.button.remove();
+            this.tabs.delete(tab.entry.name);
+            throw error;
+        }
         return typeof dispose === 'function' ? dispose : undefined;
     }
 
