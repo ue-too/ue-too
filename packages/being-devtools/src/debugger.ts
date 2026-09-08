@@ -343,6 +343,11 @@ export class MachineDebugger {
      * Logs and flashes every event the machine handles, whoever fired it.
      * Runs after the state has handled the event but before the
      * transition, so `currentState` is still the source state.
+     *
+     * @remarks
+     * If the machine's `onEventResult` returns no disposer, the callback
+     * cannot be removed; it goes inert instead once the tab is detached or
+     * the panel is disposed.
      */
     private subscribe(tab: Tab): (() => void) | undefined {
         const { machine } = tab.entry;
@@ -351,6 +356,9 @@ export class MachineDebugger {
             return undefined;
         }
         const dispose = machine.onEventResult((args, result) => {
+            if (this.disposed || this.tabs.get(tab.entry.name) !== tab) {
+                return;
+            }
             const before = String(machine.currentState);
             const line = describeEventResult(
                 String(args[0]),
