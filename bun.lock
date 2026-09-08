@@ -129,18 +129,27 @@
     },
     "packages/animate": {
       "name": "@ue-too/animate",
-      "version": "0.17.1",
+      "version": "0.18.0",
       "dependencies": {
         "@ue-too/math": "workspace:*",
       },
     },
     "packages/being": {
       "name": "@ue-too/being",
-      "version": "0.17.1",
+      "version": "0.18.0",
+    },
+    "packages/being-devtools": {
+      "name": "@ue-too/being-devtools",
+      "version": "0.18.0",
+      "dependencies": {
+        "@dagrejs/dagre": "1.1.5",
+        "@ue-too/being": "workspace:*",
+        "@ue-too/board": "workspace:*",
+      },
     },
     "packages/board": {
       "name": "@ue-too/board",
-      "version": "0.17.1",
+      "version": "0.18.0",
       "dependencies": {
         "@ue-too/being": "workspace:*",
         "@ue-too/math": "workspace:*",
@@ -148,7 +157,7 @@
     },
     "packages/board-fabric-integration": {
       "name": "@ue-too/board-fabric-integration",
-      "version": "0.17.1",
+      "version": "0.18.0",
       "dependencies": {
         "@ue-too/being": "workspace:*",
         "@ue-too/board": "workspace:*",
@@ -174,7 +183,7 @@
     },
     "packages/board-konva-integration": {
       "name": "@ue-too/board-konva-integration",
-      "version": "0.17.1",
+      "version": "0.18.0",
       "dependencies": {
         "@ue-too/being": "workspace:*",
         "@ue-too/board": "workspace:*",
@@ -189,7 +198,7 @@
     },
     "packages/board-pixi-integration": {
       "name": "@ue-too/board-pixi-integration",
-      "version": "0.17.1",
+      "version": "0.18.0",
       "dependencies": {
         "@ue-too/being": "workspace:*",
         "@ue-too/board": "workspace:*",
@@ -204,7 +213,7 @@
     },
     "packages/board-pixi-react-integration": {
       "name": "@ue-too/board-pixi-react-integration",
-      "version": "0.17.1",
+      "version": "0.18.0",
       "dependencies": {
         "@ue-too/board": "workspace:*",
         "@ue-too/board-pixi-integration": "workspace:*",
@@ -221,7 +230,7 @@
     },
     "packages/board-react-adapter": {
       "name": "@ue-too/board-react-adapter",
-      "version": "0.17.1",
+      "version": "0.18.0",
       "dependencies": {
         "@ue-too/board": "workspace:*",
         "@ue-too/math": "workspace:*",
@@ -237,7 +246,7 @@
     },
     "packages/board-vue-adapter": {
       "name": "@ue-too/board-vue-adapter",
-      "version": "0.17.1",
+      "version": "0.18.0",
       "dependencies": {
         "@ue-too/board": "workspace:*",
       },
@@ -250,14 +259,14 @@
     },
     "packages/border": {
       "name": "@ue-too/border",
-      "version": "0.17.1",
+      "version": "0.18.0",
       "dependencies": {
         "@ue-too/math": "workspace:*",
       },
     },
     "packages/curve": {
       "name": "@ue-too/curve",
-      "version": "0.17.1",
+      "version": "0.18.0",
       "dependencies": {
         "@ue-too/math": "workspace:*",
       },
@@ -269,7 +278,7 @@
     },
     "packages/dynamics": {
       "name": "@ue-too/dynamics",
-      "version": "0.17.1",
+      "version": "0.18.0",
       "dependencies": {
         "@ue-too/ecs": "workspace:*",
         "@ue-too/math": "workspace:*",
@@ -277,11 +286,11 @@
     },
     "packages/ecs": {
       "name": "@ue-too/ecs",
-      "version": "0.17.1",
+      "version": "0.18.0",
     },
     "packages/math": {
       "name": "@ue-too/math",
-      "version": "0.17.1",
+      "version": "0.18.0",
     },
   },
   "packages": {
@@ -1100,6 +1109,8 @@
     "@ue-too/animate": ["@ue-too/animate@workspace:packages/animate"],
 
     "@ue-too/being": ["@ue-too/being@workspace:packages/being"],
+
+    "@ue-too/being-devtools": ["@ue-too/being-devtools@workspace:packages/being-devtools"],
 
     "@ue-too/blast": ["@ue-too/blast@workspace:apps/blast"],
 
