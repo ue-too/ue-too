@@ -13,7 +13,7 @@ export type AnyStateMachine = StateMachine<any, any, any, any>;
  * assignable to `StateMachine<any, any, any, any>` (the conditional in
  * `State['states']` plus method variance defeats `any`-erasure), so the
  * public parameter type is this minimal shape, which they satisfy without
- * a cast. The erasure happens once, inside {@link MachineRegistry.attach}.
+ * a cast. The erasure happens once, inside `MachineRegistry.attach`.
  *
  * @category Types
  */

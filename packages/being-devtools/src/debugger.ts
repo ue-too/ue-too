@@ -176,7 +176,7 @@ export class MachineDebugger {
 
     /**
      * Attaches every `being` machine the board exposes (see
-     * {@link resolveBoardMachines}). Attaches what it finds; throws only
+     * `resolveBoardMachines`). Attaches what it finds; throws only
      * when it finds nothing.
      */
     attachBoard(
