@@ -75,7 +75,7 @@ being-devtools`, then adjusted to match `board-react-adapter`:
   `@dagrejs/dagre` at `1.1.5`.
 - `project.json` build target: `dependsOn` `being` and `board`; build command
   passes `--external @ue-too/being --external @ue-too/board --external
-  @dagrejs/dagre`.
+@dagrejs/dagre`.
 - `docs:build` target uses `docs-build-i18n.ts` like every other package.
 - `nx.json` already releases `packages/*`, so the package versions in
   lockstep with no config change.
@@ -128,7 +128,10 @@ export type AttachHandle = { dispose(): void };
 
 export class MachineDebugger {
     constructor(options?: MachineDebuggerOptions);
-    attach(machine: StateMachine<any, any, any, any>, options?: AttachOptions): AttachHandle;
+    attach(
+        machine: StateMachine<any, any, any, any>,
+        options?: AttachOptions
+    ): AttachHandle;
     attachBoard(board: Board, options?: { namePrefix?: string }): AttachHandle;
     open(): void;
     close(): void;
@@ -179,13 +182,13 @@ borrowed machine.
 
 `resolveBoardMachines(board)` returns up to five entries:
 
-| name suffix        | source                                  | sample payloads              |
-|--------------------|-----------------------------------------|------------------------------|
-| `kmt-input`        | `board.kmtInputStateMachine`            | the nine KMT payloads         |
-| `touch-input`      | `board.touchInputStateMachine`          | the three touch payloads      |
-| `pan-control`      | `board.cameraMux.panStateMachine`       | none                          |
-| `zoom-control`     | `board.cameraMux.zoomStateMachine`      | none                          |
-| `rotation-control` | `board.cameraMux.rotateStateMachine`    | none                          |
+| name suffix        | source                               | sample payloads          |
+| ------------------ | ------------------------------------ | ------------------------ |
+| `kmt-input`        | `board.kmtInputStateMachine`         | the nine KMT payloads    |
+| `touch-input`      | `board.touchInputStateMachine`       | the three touch payloads |
+| `pan-control`      | `board.cameraMux.panStateMachine`    | none                     |
+| `zoom-control`     | `board.cameraMux.zoomStateMachine`   | none                     |
+| `rotation-control` | `board.cameraMux.rotateStateMachine` | none                     |
 
 Names are `${namePrefix ?? 'board'}:${suffix}`. Two boards on one page pass
 different prefixes.
@@ -288,9 +291,14 @@ a single full-page container plus the title) and `account-demo.ts`.
 
 ```ts
 const panel = new MachineDebugger({ container, openByDefault: true });
-panel.attach(createVendingMachine(), { name: 'Vending machine (being example)' });
-panel.attach(createAccountDemoMachine(), { name: 'Bank account (preconditions demo)', samplePayloads });
-panel.attachBoard(panelGraphBoard);  // the diagram's own board, resolved from the panel
+panel.attach(createVendingMachine(), {
+    name: 'Vending machine (being example)',
+});
+panel.attach(createAccountDemoMachine(), {
+    name: 'Bank account (preconditions demo)',
+    samplePayloads,
+});
+panel.attachBoard(panelGraphBoard); // the diagram's own board, resolved from the panel
 ```
 
 The panel exposes its own graph `Board` (`get board()`) so the page can keep

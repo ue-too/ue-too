@@ -1,6 +1,6 @@
 # @ue-too/being-devtools
 
-Attachable devtools for [`@ue-too/being`](https://www.npmjs.com/package/@ue-too/being) state machines. One call strips a live state chart, event log, and context inspector onto any running machine.
+Attachable devtools for [`@ue-too/being`](https://www.npmjs.com/package/@ue-too/being) state machines. One call straps a live state chart, event log, and context inspector onto any running machine.
 
 [![npm version](https://img.shields.io/npm/v/@ue-too/being-devtools.svg)](https://www.npmjs.com/package/@ue-too/being-devtools)
 [![license](https://img.shields.io/npm/l/@ue-too/being-devtools.svg)](https://github.com/kinnet-studio/ue-too/blob/main/LICENSE.txt)
@@ -11,7 +11,7 @@ Attachable devtools for [`@ue-too/being`](https://www.npmjs.com/package/@ue-too/
 bun add -d @ue-too/being-devtools
 ```
 
-Peers: `@ue-too/being` and `@ue-too/board` are dependencies and install with it.
+`@ue-too/being` and `@ue-too/board` are ordinary dependencies and install with it.
 
 ## One line
 
@@ -39,6 +39,8 @@ if (import.meta.env.DEV) {
     attachMachineDebugger(machine, { name: 'pan-control' });
 }
 ```
+
+Browser only: call it after the document is ready (a client-side effect or `onMounted` is the right place), never during server-side rendering.
 
 ## Boards
 

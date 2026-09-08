@@ -30,6 +30,7 @@
 ### Task 1: Scaffold the package and move `layout.ts` / `render.ts`
 
 **Files:**
+
 - Create (via scaffold): `packages/being-devtools/` — `package.json`, `project.json`, `tsconfig.json`, `tsconfig.spec.json`, `jest.config.js`, `rollup.config.js`, `typedoc.json`, `README.md`, `src/index.ts`, `test/being-devtools.test.ts`
 - Create: `packages/being-devtools/src/layout.ts` (copied verbatim from `apps/examples/src/state-machine-visualizer/layout.ts`)
 - Create: `packages/being-devtools/src/render.ts` (copied verbatim from `apps/examples/src/state-machine-visualizer/render.ts`)
@@ -37,12 +38,13 @@
 - Test: `packages/being-devtools/test/layout.test.ts`
 
 **Interfaces:**
+
 - Consumes: nothing.
 - Produces:
-  - `layoutGraph(graph: MachineGraph, measureText: (text: string) => number): LaidOutGraph`
-  - `type LaidOutGraph = { nodes: LaidOutNode[]; edges: LaidOutEdge[] }`, `type LaidOutEdge = { from; to; event; guard?; preconditions?; points; selfLoop; labelX; labelY; label }`
-  - `drawGraph(ctx: CanvasRenderingContext2D, layout: LaidOutGraph, currentState: string | null, flash: Flash, now: number, enabledEdges?: boolean[]): void`
-  - `type Flash = { edgeIndex: number; at: number } | null`
+    - `layoutGraph(graph: MachineGraph, measureText: (text: string) => number): LaidOutGraph`
+    - `type LaidOutGraph = { nodes: LaidOutNode[]; edges: LaidOutEdge[] }`, `type LaidOutEdge = { from; to; event; guard?; preconditions?; points; selfLoop; labelX; labelY; label }`
+    - `drawGraph(ctx: CanvasRenderingContext2D, layout: LaidOutGraph, currentState: string | null, flash: Flash, now: number, enabledEdges?: boolean[]): void`
+    - `type Flash = { edgeIndex: number; at: number } | null`
 
 - [ ] **Step 1: Run the scaffold**
 
@@ -58,40 +60,40 @@ The scaffold writes an old version and no dependencies. Overwrite the file with:
 
 ```json
 {
-    "name": "@ue-too/being-devtools",
-    "type": "module",
-    "version": "0.18.0",
+    "dependencies": {
+        "@dagrejs/dagre": "1.1.5",
+        "@ue-too/being": "workspace:*",
+        "@ue-too/board": "workspace:*"
+    },
+    "exports": {
+        ".": {
+            "default": "./src/index.ts",
+            "import": "./src/index.ts",
+            "types": "./src/index.ts"
+        },
+        "./*": {
+            "default": "./src/*/index.ts",
+            "import": "./src/*/index.ts",
+            "types": "./src/*/index.ts"
+        },
+        "./package.json": "./package.json"
+    },
+    "homepage": "https://github.com/kinnet-studio/ue-too",
     "license": "MIT",
+    "main": "./src/index.ts",
+    "module": "./src/index.ts",
+    "name": "@ue-too/being-devtools",
     "repository": {
         "type": "git",
         "url": "https://github.com/kinnet-studio/ue-too.git"
     },
-    "homepage": "https://github.com/kinnet-studio/ue-too",
     "scripts": {
-        "test": "jest",
-        "build:legacy": "rm -rf dist && rollup -c rollup.config.js"
+        "build:legacy": "rm -rf dist && rollup -c rollup.config.js",
+        "test": "jest"
     },
-    "exports": {
-        ".": {
-            "types": "./src/index.ts",
-            "import": "./src/index.ts",
-            "default": "./src/index.ts"
-        },
-        "./package.json": "./package.json",
-        "./*": {
-            "types": "./src/*/index.ts",
-            "import": "./src/*/index.ts",
-            "default": "./src/*/index.ts"
-        }
-    },
-    "main": "./src/index.ts",
+    "type": "module",
     "types": "./src/index.ts",
-    "module": "./src/index.ts",
-    "dependencies": {
-        "@ue-too/being": "workspace:*",
-        "@ue-too/board": "workspace:*",
-        "@dagrejs/dagre": "1.1.5"
-    }
+    "version": "0.18.0"
 }
 ```
 
@@ -205,9 +207,9 @@ Add project references so `tsc --emitDeclarationOnly` (run by `scripts/build.ts`
 In the repo-root `tsconfig.json`, add one entry to the `references` array, after the `./packages/board-pixi-react-integration` entry:
 
 ```json
-        {
-            "path": "./packages/being-devtools"
-        }
+{
+    "path": "./packages/being-devtools"
+}
 ```
 
 - [ ] **Step 6: Copy `layout.ts` and `render.ts` verbatim**
@@ -223,7 +225,7 @@ Do not edit either file. The app's copies stay in place until Task 8 deletes the
 
 Replace the scaffold's placeholder with:
 
-```typescript
+````typescript
 /**
  * @packageDocumentation
  * Attachable devtools for `@ue-too/being` state machines.
@@ -247,7 +249,7 @@ export { layoutGraph } from './layout';
 export type { LaidOutEdge, LaidOutGraph, LaidOutNode } from './layout';
 export { drawGraph } from './render';
 export type { Flash } from './render';
-```
+````
 
 Later tasks append their exports to this file.
 
@@ -349,17 +351,19 @@ Claude-Session: https://claude.ai/code/session_018z87YjdvG72iGPz9DBC9A7"
 ### Task 2: `hotkey.ts`
 
 **Files:**
+
 - Create: `packages/being-devtools/src/hotkey.ts`
 - Modify: `packages/being-devtools/src/index.ts`
 - Test: `packages/being-devtools/test/hotkey.test.ts`
 
 **Interfaces:**
+
 - Consumes: nothing.
 - Produces:
-  - `type ParsedHotkey = { ctrl: boolean; shift: boolean; alt: boolean; key: string }`
-  - `type HotkeyEventLike = { key: string; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean; altKey: boolean }` (a `KeyboardEvent` satisfies it)
-  - `parseHotkey(spec: string): ParsedHotkey` — throws on no key or two keys
-  - `matchesHotkey(event: HotkeyEventLike, hotkey: ParsedHotkey): boolean` — `ctrl` is satisfied by `ctrlKey` **or** `metaKey`
+    - `type ParsedHotkey = { ctrl: boolean; shift: boolean; alt: boolean; key: string }`
+    - `type HotkeyEventLike = { key: string; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean; altKey: boolean }` (a `KeyboardEvent` satisfies it)
+    - `parseHotkey(spec: string): ParsedHotkey` — throws on no key or two keys
+    - `matchesHotkey(event: HotkeyEventLike, hotkey: ParsedHotkey): boolean` — `ctrl` is satisfied by `ctrlKey` **or** `metaKey`
 
 - [ ] **Step 1: Write the failing test**
 
@@ -409,16 +413,23 @@ describe('matchesHotkey', () => {
     const hotkey = parseHotkey('ctrl+shift+m');
 
     it('matches with ctrl held', () => {
-        expect(matchesHotkey(key({ ctrlKey: true, shiftKey: true }), hotkey)).toBe(true);
+        expect(
+            matchesHotkey(key({ ctrlKey: true, shiftKey: true }), hotkey)
+        ).toBe(true);
     });
 
     it('matches with meta held instead of ctrl (macOS)', () => {
-        expect(matchesHotkey(key({ metaKey: true, shiftKey: true }), hotkey)).toBe(true);
+        expect(
+            matchesHotkey(key({ metaKey: true, shiftKey: true }), hotkey)
+        ).toBe(true);
     });
 
     it('matches the shifted uppercase key the browser reports', () => {
         expect(
-            matchesHotkey(key({ key: 'M', ctrlKey: true, shiftKey: true }), hotkey)
+            matchesHotkey(
+                key({ key: 'M', ctrlKey: true, shiftKey: true }),
+                hotkey
+            )
         ).toBe(true);
     });
 
@@ -437,7 +448,10 @@ describe('matchesHotkey', () => {
 
     it('rejects a different key', () => {
         expect(
-            matchesHotkey(key({ key: 'k', ctrlKey: true, shiftKey: true }), hotkey)
+            matchesHotkey(
+                key({ key: 'k', ctrlKey: true, shiftKey: true }),
+                hotkey
+            )
         ).toBe(false);
     });
 });
@@ -575,20 +589,22 @@ Claude-Session: https://claude.ai/code/session_018z87YjdvG72iGPz9DBC9A7"
 ### Task 3: `log.ts` — coalescing event log model
 
 **Files:**
+
 - Create: `packages/being-devtools/src/log.ts`
 - Modify: `packages/being-devtools/src/index.ts`
 - Test: `packages/being-devtools/test/log.test.ts`
 
 **Interfaces:**
+
 - Consumes: `EventResult` from `@ue-too/being`.
 - Produces:
-  - `type LogEntry = { text: string; key?: string; count: number }`
-  - `type LogChange = { kind: 'added'; entry: LogEntry; evicted: number } | { kind: 'updated'; entry: LogEntry }`
-  - `class EventLog { constructor(maxEntries = 200); get entries(): readonly LogEntry[] /* newest first */; append(text: string, key?: string): LogChange; clear(): void }`
-  - `formatLogEntry(entry: LogEntry): string` — `text` or `text ×N`
-  - `type EventLine = { event: string; text: string; key: string; handled: boolean; before: string; after: string }`
-  - `describeEventResult(event: string, payload: unknown, before: string, result: EventResult<string, unknown>): EventLine`
-  - `MAX_LOG_ENTRIES = 200`
+    - `type LogEntry = { text: string; key?: string; count: number }`
+    - `type LogChange = { kind: 'added'; entry: LogEntry; evicted: number } | { kind: 'updated'; entry: LogEntry }`
+    - `class EventLog { constructor(maxEntries = 200); get entries(): readonly LogEntry[] /* newest first */; append(text: string, key?: string): LogChange; clear(): void }`
+    - `formatLogEntry(entry: LogEntry): string` — `text` or `text ×N`
+    - `type EventLine = { event: string; text: string; key: string; handled: boolean; before: string; after: string }`
+    - `describeEventResult(event: string, payload: unknown, before: string, result: EventResult<string, unknown>): EventLine`
+    - `MAX_LOG_ENTRIES = 200`
 
 **Background:** this is the `appendLog` logic from `apps/examples/src/state-machine-visualizer/main.ts` lifted out of the DOM. Without coalescing, a live board machine's ~60 Hz `pointerMove` stream evicts the whole log in about three seconds of panning. The `!unhandled` / `!noop` sentinels cannot collide with a real state name, unlike the transition key which interpolates one.
 
@@ -826,7 +842,8 @@ export function describeEventResult(
     before: string,
     result: EventResult<string, unknown>
 ): EventLine {
-    const payloadText = payload === undefined ? '' : ` ${JSON.stringify(payload)}`;
+    const payloadText =
+        payload === undefined ? '' : ` ${JSON.stringify(payload)}`;
     if (!result.handled) {
         return {
             event,
@@ -898,17 +915,19 @@ Claude-Session: https://claude.ai/code/session_018z87YjdvG72iGPz9DBC9A7"
 ### Task 4: `enabled.ts` and `context.ts`
 
 **Files:**
+
 - Create: `packages/being-devtools/src/enabled.ts`
 - Create: `packages/being-devtools/src/context.ts`
 - Modify: `packages/being-devtools/src/index.ts`
 - Test: `packages/being-devtools/test/enabled.test.ts`, `packages/being-devtools/test/context.test.ts`
 
 **Interfaces:**
+
 - Consumes: `LaidOutGraph`, `LaidOutEdge` from Task 1; `StateMachine` from `@ue-too/being`.
 - Produces:
-  - `computeEnabledEdges(machine: StateMachine<any, any, any, any>, layout: LaidOutGraph): boolean[]` — one flag per `layout.edges` entry
-  - `serializeContext(context: unknown, maxChars = MAX_CONTEXT_CHARS): string`
-  - `MAX_CONTEXT_CHARS = 2000`
+    - `computeEnabledEdges(machine: StateMachine<any, any, any, any>, layout: LaidOutGraph): boolean[]` — one flag per `layout.edges` entry
+    - `serializeContext(context: unknown, maxChars = MAX_CONTEXT_CHARS): string`
+    - `MAX_CONTEXT_CHARS = 2000`
 
 **Background:** both functions are lifted from `apps/examples/src/state-machine-visualizer/main.ts` (`computeEnabledEdges`, `serializeContext`) with the module-level `machine`/`layout` globals turned into parameters. Behaviour is unchanged: an edge is enabled when it leaves the current state and every declared precondition passes against the live context; a missing guard fails closed (matching the machine's veto); a throwing guard stays enabled (display only, don't dim on a throw); routing guards are not evaluated.
 
@@ -967,12 +986,16 @@ const layout: LaidOutGraph = {
 
 describe('computeEnabledEdges', () => {
     it('enables edges leaving the current state whose preconditions pass', () => {
-        const m = machine('A', { balance: 10 }, {
-            hasFunds: c => (c as { balance: number }).balance > 0,
-            boom: () => {
-                throw new Error('guard exploded');
-            },
-        });
+        const m = machine(
+            'A',
+            { balance: 10 },
+            {
+                hasFunds: c => (c as { balance: number }).balance > 0,
+                boom: () => {
+                    throw new Error('guard exploded');
+                },
+            }
+        );
         expect(computeEnabledEdges(m, layout)).toEqual([
             true, // plain
             true, // guarded, passes
@@ -983,9 +1006,13 @@ describe('computeEnabledEdges', () => {
     });
 
     it('dims an edge whose precondition fails', () => {
-        const m = machine('A', { balance: 0 }, {
-            hasFunds: c => (c as { balance: number }).balance > 0,
-        });
+        const m = machine(
+            'A',
+            { balance: 0 },
+            {
+                hasFunds: c => (c as { balance: number }).balance > 0,
+            }
+        );
         expect(computeEnabledEdges(m, layout)[1]).toBe(false);
     });
 
@@ -1191,22 +1218,24 @@ Claude-Session: https://claude.ai/code/session_018z87YjdvG72iGPz9DBC9A7"
 ### Task 5: `registry.ts` — attached-machine registry and public attach types
 
 **Files:**
+
 - Create: `packages/being-devtools/src/registry.ts`
 - Modify: `packages/being-devtools/src/index.ts`
 - Test: `packages/being-devtools/test/registry.test.ts`
 
 **Interfaces:**
+
 - Consumes: `StateMachine` from `@ue-too/being`.
 - Produces:
-  - `type AnyStateMachine = StateMachine<any, any, any, any>` — internal alias, **not exported from `index.ts`**
-  - `type MachineLike` — the public parameter type every attach function accepts (see background)
-  - `type AttachOptions = { name?: string; samplePayloads?: Record<string, unknown> }`
-  - `type AttachHandle = { dispose(): void }`
-  - `type AttachedMachine = { readonly name: string; readonly machine: AnyStateMachine; readonly samplePayloads: Record<string, unknown> }`
-  - `type Subscriber = (entry: AttachedMachine) => (() => void) | undefined`
-  - `class MachineRegistry { get size(): number; get names(): string[]; get(name): AttachedMachine | undefined; attach(machine: MachineLike, options: AttachOptions, subscribe: Subscriber): AttachedMachine; detach(name: string): boolean; detachAll(): void }`
+    - `type AnyStateMachine = StateMachine<any, any, any, any>` — internal alias, **not exported from `index.ts`**
+    - `type MachineLike` — the public parameter type every attach function accepts (see background)
+    - `type AttachOptions = { name?: string; samplePayloads?: Record<string, unknown> }`
+    - `type AttachHandle = { dispose(): void }`
+    - `type AttachedMachine = { readonly name: string; readonly machine: AnyStateMachine; readonly samplePayloads: Record<string, unknown> }`
+    - `type Subscriber = (entry: AttachedMachine) => (() => void) | undefined`
+    - `class MachineRegistry { get size(): number; get names(): string[]; get(name): AttachedMachine | undefined; attach(machine: MachineLike, options: AttachOptions, subscribe: Subscriber): AttachedMachine; detach(name: string): boolean; detachAll(): void }`
 
-**Background — why `MachineLike` exists:** the examples registry carries this comment: *"Concrete machines with literal-union States aren't structurally assignable to `StateMachine<any, any, any, any>`: State['states']'s conditional `string extends States ? string : States` plus method variance defeats `any`-erasure."* If the public `attach` took `StateMachine<any, any, any, any>`, every caller would need `as unknown as StateMachine<any, any, any, any>` — the opposite of a one-liner. So the public parameter is a minimal structural type that any `TemplateStateMachine` satisfies without a cast, and the cast to `AnyStateMachine` happens exactly once, inside `MachineRegistry.attach`.
+**Background — why `MachineLike` exists:** the examples registry carries this comment: _"Concrete machines with literal-union States aren't structurally assignable to `StateMachine<any, any, any, any>`: State['states']'s conditional `string extends States ? string : States` plus method variance defeats `any`-erasure."_ If the public `attach` took `StateMachine<any, any, any, any>`, every caller would need `as unknown as StateMachine<any, any, any, any>` — the opposite of a one-liner. So the public parameter is a minimal structural type that any `TemplateStateMachine` satisfies without a cast, and the cast to `AnyStateMachine` happens exactly once, inside `MachineRegistry.attach`.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -1533,17 +1562,19 @@ Claude-Session: https://claude.ai/code/session_018z87YjdvG72iGPz9DBC9A7"
 ### Task 6: `board.ts` — resolve a board's five machines
 
 **Files:**
+
 - Create: `packages/being-devtools/src/board.ts`
 - Modify: `packages/being-devtools/src/index.ts`
 - Test: `packages/being-devtools/test/board.test.ts`
 
 **Interfaces:**
+
 - Consumes: `AnyStateMachine` from Task 5.
 - Produces:
-  - `type BoardLike = { kmtInputStateMachine?: unknown; touchInputStateMachine?: unknown; cameraMux: unknown }` — a real `Board` satisfies it
-  - `type BoardMachineEntry = { name: string; machine: AnyStateMachine; samplePayloads: Record<string, unknown> }`
-  - `resolveBoardMachines(board: BoardLike, namePrefix = 'board'): BoardMachineEntry[]` — in the order kmt-input, touch-input, pan-control, zoom-control, rotation-control, skipping whatever the board lacks
-  - `KMT_SAMPLE_PAYLOADS`, `TOUCH_SAMPLE_PAYLOADS` constants
+    - `type BoardLike = { kmtInputStateMachine?: unknown; touchInputStateMachine?: unknown; cameraMux: unknown }` — a real `Board` satisfies it
+    - `type BoardMachineEntry = { name: string; machine: AnyStateMachine; samplePayloads: Record<string, unknown> }`
+    - `resolveBoardMachines(board: BoardLike, namePrefix = 'board'): BoardMachineEntry[]` — in the order kmt-input, touch-input, pan-control, zoom-control, rotation-control, skipping whatever the board lacks
+    - `KMT_SAMPLE_PAYLOADS`, `TOUCH_SAMPLE_PAYLOADS` constants
 
 **Background:** the camera mux is narrowed structurally, not with `instanceof CameraMuxWithAnimationAndLock`. `@ue-too/board`'s own `hasBeingStateMachineShape` in `boardify/index.ts` takes the same approach because a consumer that resolves two copies of a package fails `instanceof` against a perfectly valid object.
 
@@ -1807,13 +1838,15 @@ Claude-Session: https://claude.ai/code/session_018z87YjdvG72iGPz9DBC9A7"
 ### Task 7: `panel-dom.ts` — the Shadow DOM panel skeleton
 
 **Files:**
+
 - Create: `packages/being-devtools/src/panel-dom.ts`
 
 **Interfaces:**
+
 - Consumes: nothing.
 - Produces:
-  - `type PanelDom = { host: HTMLElement; canvas: HTMLCanvasElement; tabStrip: HTMLElement; currentState: HTMLElement; contextView: HTMLElement; panelError: HTMLElement; eventRows: HTMLElement; resetButton: HTMLButtonElement; log: HTMLUListElement; pill: HTMLButtonElement; closeButton: HTMLButtonElement; setOpen(open: boolean): void; setCount(count: number): void; destroy(): void }`
-  - `createPanelDom(options: { container?: HTMLElement }): PanelDom`
+    - `type PanelDom = { host: HTMLElement; canvas: HTMLCanvasElement; tabStrip: HTMLElement; currentState: HTMLElement; contextView: HTMLElement; panelError: HTMLElement; eventRows: HTMLElement; resetButton: HTMLButtonElement; log: HTMLUListElement; pill: HTMLButtonElement; closeButton: HTMLButtonElement; setOpen(open: boolean): void; setCount(count: number): void; destroy(): void }`
+    - `createPanelDom(options: { container?: HTMLElement }): PanelDom`
 
 **Background:** this file is DOM-only and has no unit test; Task 8 verifies it through the examples page. Two mount modes share one shadow tree: with no `container` the host is appended to `document.body` as a fixed bottom-right overlay; with a `container` the host fills it. Visibility is switched by a class on the wrapper, not the `hidden` attribute, because an author `display:flex` rule would beat the UA's `[hidden]` rule inside the shadow tree.
 
@@ -2076,7 +2109,9 @@ export function createPanelDom(options: { container?: HTMLElement }): PanelDom {
     const query = <T extends Element>(selector: string): T => {
         const element = root.querySelector<T>(selector);
         if (element === null) {
-            throw new Error(`being-devtools panel markup is missing ${selector}`);
+            throw new Error(
+                `being-devtools panel markup is missing ${selector}`
+            );
         }
         return element;
     };
@@ -2133,6 +2168,7 @@ Claude-Session: https://claude.ai/code/session_018z87YjdvG72iGPz9DBC9A7"
 ### Task 8: `debugger.ts` and the examples page rebuilt on it
 
 **Files:**
+
 - Create: `packages/being-devtools/src/debugger.ts`
 - Modify: `packages/being-devtools/src/index.ts`
 - Modify: `apps/examples/src/state-machine-visualizer/index.html` (rewrite)
@@ -2142,18 +2178,19 @@ Claude-Session: https://claude.ai/code/session_018z87YjdvG72iGPz9DBC9A7"
 - Modify: `apps/examples/project.json` — add `being-devtools` to `implicitDependencies`
 
 **Interfaces:**
+
 - Consumes: everything from Tasks 1–7: `layoutGraph`, `drawGraph`, `Flash`, `parseHotkey`, `matchesHotkey`, `EventLog`, `describeEventResult`, `formatLogEntry`, `computeEnabledEdges`, `serializeContext`, `MachineRegistry`, `MachineLike`, `AttachOptions`, `AttachHandle`, `AttachedMachine`, `AnyStateMachine`, `resolveBoardMachines`, `BoardLike`, `createPanelDom`, `PanelDom`. From packages: `extractMachineGraph` (`@ue-too/being`), `Board` (`@ue-too/board`).
 - Produces:
-  - `type MachineDebuggerOptions = { container?: HTMLElement; hotkey?: string | false; openByDefault?: boolean }`
-  - `DEFAULT_HOTKEY = 'ctrl+shift+m'`
-  - `class MachineDebugger { constructor(options?); attach(machine: MachineLike, options?: AttachOptions): AttachHandle; attachBoard(board: BoardLike, options?: { namePrefix?: string }): AttachHandle; open(); close(); toggle(); get isOpen(): boolean; get board(): Board; get size(): number; get machines(): ReadonlyMap<string, AnyStateMachine>; dispose() }`
-  - Task 9 relies on `size`, `machines`, `open`, `close`, `attach`, `attachBoard`, `dispose`, and on the constructor calling `registerPanel(this)` / `dispose()` calling `unregisterPanel(this)` — those two calls are added in Task 9, not here.
+    - `type MachineDebuggerOptions = { container?: HTMLElement; hotkey?: string | false; openByDefault?: boolean }`
+    - `DEFAULT_HOTKEY = 'ctrl+shift+m'`
+    - `class MachineDebugger { constructor(options?); attach(machine: MachineLike, options?: AttachOptions): AttachHandle; attachBoard(board: BoardLike, options?: { namePrefix?: string }): AttachHandle; open(); close(); toggle(); get isOpen(): boolean; get board(): Board; get size(): number; get machines(): ReadonlyMap<string, AnyStateMachine>; dispose() }`
+    - Task 9 relies on `size`, `machines`, `open`, `close`, `attach`, `attachBoard`, `dispose`, and on the constructor calling `registerPanel(this)` / `dispose()` calling `unregisterPanel(this)` — those two calls are added in Task 9, not here.
 
 **Background:** this is `apps/examples/src/state-machine-visualizer/main.ts` turned into a class that owns its DOM. Behavioural rules carried over verbatim: the `onEventResult` callback runs after the state handled the event but before the transition, so `machine.currentState` inside it is still the source state; every attached machine is borrowed so `wrapup()` is never called; `reset()` stays as the recovery for a live machine stranded by a hand-fired half-gesture.
 
 - [ ] **Step 1: Implement `packages/being-devtools/src/debugger.ts`**
 
-```typescript
+````typescript
 import { extractMachineGraph } from '@ue-too/being';
 import { Board } from '@ue-too/board';
 
@@ -2466,7 +2503,8 @@ export class MachineDebugger {
                 this.measureText
             );
         } catch (error) {
-            layoutError = error instanceof Error ? error.message : String(error);
+            layoutError =
+                error instanceof Error ? error.message : String(error);
         }
         const button = document.createElement('button');
         button.type = 'button';
@@ -2669,7 +2707,7 @@ export class MachineDebugger {
         this.appendLog(tab, 'machine reset');
     }
 }
-```
+````
 
 - [ ] **Step 2: Export from `index.ts`**
 
@@ -2697,9 +2735,9 @@ In `apps/examples/project.json`, add `"being-devtools"` to the `implicitDependen
 In `apps/examples/tsconfig.json`, add a project reference after the `../../packages/being` entry:
 
 ```json
-        {
-            "path": "../../packages/being-devtools"
-        }
+{
+    "path": "../../packages/being-devtools"
+}
 ```
 
 Then:
@@ -2770,8 +2808,8 @@ panel.attachBoard(panel.board);
 
 ```bash
 git rm apps/examples/src/state-machine-visualizer/registry.ts \
-       apps/examples/src/state-machine-visualizer/layout.ts \
-       apps/examples/src/state-machine-visualizer/render.ts
+    apps/examples/src/state-machine-visualizer/layout.ts \
+    apps/examples/src/state-machine-visualizer/render.ts
 ```
 
 `account-demo.ts` stays.
@@ -2824,6 +2862,7 @@ Claude-Session: https://claude.ai/code/session_018z87YjdvG72iGPz9DBC9A7"
 ### Task 9: `hook.ts` and `attach.ts` — shared overlay panel and `window.__UE_TOO_BEING__`
 
 **Files:**
+
 - Create: `packages/being-devtools/src/hook.ts`
 - Create: `packages/being-devtools/src/attach.ts`
 - Modify: `packages/being-devtools/src/debugger.ts` (two lines: register in the constructor, unregister in `dispose`)
@@ -2831,10 +2870,11 @@ Claude-Session: https://claude.ai/code/session_018z87YjdvG72iGPz9DBC9A7"
 - Test: `packages/being-devtools/test/hook.test.ts`, `packages/being-devtools/test/attach.test.ts`
 
 **Interfaces:**
+
 - Consumes: `MachineDebugger` (Task 8), `AttachHandle`, `AttachOptions`, `MachineLike`, `AnyStateMachine` (Task 5), `BoardLike` (Task 6).
 - Produces:
-  - `hook.ts`: `type HookPanel = { open(): void; close(): void; readonly machines: ReadonlyMap<string, AnyStateMachine> }`; `type BeingDevtoolsHook = { readonly machines: ReadonlyMap<string, AnyStateMachine>; open(): void; close(): void; attach(machine: MachineLike, options?: AttachOptions): AttachHandle }`; `HOOK_KEY = '__UE_TOO_BEING__'`; `registerPanel(panel: HookPanel, target?: HookTarget): void`; `unregisterPanel(panel: HookPanel): void`; `configureHookAttach(fn): void`; `type HookTarget = Record<string, unknown>`
-  - `attach.ts`: `type SharedPanelLike = { attach(...): AttachHandle; attachBoard(...): AttachHandle; readonly size: number; dispose(): void }`; `createSharedAttachers(factory: () => SharedPanelLike): { attachMachineDebugger; attachBoardDebugger }`; `attachMachineDebugger(machine: MachineLike, options?: AttachOptions): AttachHandle`; `attachBoardDebugger(board: BoardLike, options?: { namePrefix?: string }): AttachHandle`
+    - `hook.ts`: `type HookPanel = { open(): void; close(): void; readonly machines: ReadonlyMap<string, AnyStateMachine> }`; `type BeingDevtoolsHook = { readonly machines: ReadonlyMap<string, AnyStateMachine>; open(): void; close(): void; attach(machine: MachineLike, options?: AttachOptions): AttachHandle }`; `HOOK_KEY = '__UE_TOO_BEING__'`; `registerPanel(panel: HookPanel, target?: HookTarget): void`; `unregisterPanel(panel: HookPanel): void`; `configureHookAttach(fn): void`; `type HookTarget = Record<string, unknown>`
+    - `attach.ts`: `type SharedPanelLike = { attach(...): AttachHandle; attachBoard(...): AttachHandle; readonly size: number; dispose(): void }`; `createSharedAttachers(factory: () => SharedPanelLike): { attachMachineDebugger; attachBoardDebugger }`; `attachMachineDebugger(machine: MachineLike, options?: AttachOptions): AttachHandle`; `attachBoardDebugger(board: BoardLike, options?: { namePrefix?: string }): AttachHandle`
 
 **Background:** the hook lives in its own module so it can be tested against a plain object instead of `window`, and so `debugger.ts` (which registers panels) and `attach.ts` (which supplies the hook's `attach`) do not import each other. `attach.ts` injects its function with `configureHookAttach` at module load; `index.ts` imports `attach.ts`, so any consumer of the package entry gets a working hook.
 
@@ -2855,7 +2895,9 @@ import {
 } from '../src/hook';
 import { AnyStateMachine } from '../src/registry';
 
-function fakePanel(names: string[]): HookPanel & { opened: number; closed: number } {
+function fakePanel(
+    names: string[]
+): HookPanel & { opened: number; closed: number } {
     const machines = new Map<string, AnyStateMachine>();
     for (const name of names) {
         machines.set(name, { name } as unknown as AnyStateMachine);
@@ -3187,7 +3229,7 @@ export function unregisterPanel(panel: HookPanel): void {
 
 - [ ] **Step 4: Implement `packages/being-devtools/src/attach.ts`**
 
-```typescript
+````typescript
 import { BoardLike } from './board';
 import { MachineDebugger } from './debugger';
 import { configureHookAttach } from './hook';
@@ -3250,7 +3292,9 @@ export function createSharedAttachers(factory: () => SharedPanelLike): {
         };
     };
 
-    const guarded = (run: (p: SharedPanelLike) => AttachHandle): AttachHandle => {
+    const guarded = (
+        run: (p: SharedPanelLike) => AttachHandle
+    ): AttachHandle => {
         const p = panel();
         try {
             return wrap(run(p));
@@ -3305,7 +3349,7 @@ export function attachBoardDebugger(
 }
 
 configureHookAttach(attachMachineDebugger);
-```
+````
 
 - [ ] **Step 5: Register panels from `debugger.ts`**
 
@@ -3320,13 +3364,13 @@ import { registerPanel, unregisterPanel } from './hook';
 In the constructor, immediately after `this.dom.setCount(0);`, add:
 
 ```typescript
-        registerPanel(this);
+registerPanel(this);
 ```
 
 In `dispose()`, immediately after `this.disposed = true;`, add:
 
 ```typescript
-        unregisterPanel(this);
+unregisterPanel(this);
 ```
 
 `MachineDebugger` already satisfies `HookPanel` through its `open`, `close`, and `machines` members.
@@ -3388,18 +3432,20 @@ Claude-Session: https://claude.ai/code/session_018z87YjdvG72iGPz9DBC9A7"
 ### Task 10: README, docs config, `CLAUDE.md`, final verification
 
 **Files:**
+
 - Modify: `packages/being-devtools/README.md` (rewrite)
 - Modify: `packages/being-devtools/typedoc.json` (check `categoryOrder`)
 - Modify: `CLAUDE.md` (repo root) — project structure
 - Verify: whole-repo test, build, format check
 
 **Interfaces:**
+
 - Consumes: the public API as exported from `packages/being-devtools/src/index.ts`.
 - Produces: nothing new.
 
 - [ ] **Step 1: Write `packages/being-devtools/README.md`**
 
-```markdown
+````markdown
 # @ue-too/being-devtools
 
 Attachable devtools for [`@ue-too/being`](https://www.npmjs.com/package/@ue-too/being) state machines. One call strips a live state chart, event log, and context inspector onto any running machine.
@@ -3412,6 +3458,7 @@ Attachable devtools for [`@ue-too/being`](https://www.npmjs.com/package/@ue-too/
 ```bash
 bun add -d @ue-too/being-devtools
 ```
+````
 
 Peers: `@ue-too/being` and `@ue-too/board` are dependencies and install with it.
 
@@ -3449,7 +3496,7 @@ if (import.meta.env.DEV) {
 ```ts
 import { attachBoardDebugger } from '@ue-too/being-devtools';
 
-attachBoardDebugger(board);            // tabs: board:kmt-input, board:touch-input, board:pan-control, ...
+attachBoardDebugger(board); // tabs: board:kmt-input, board:touch-input, board:pan-control, ...
 attachBoardDebugger(minimap, { namePrefix: 'minimap' });
 ```
 
@@ -3462,7 +3509,7 @@ import { MachineDebugger } from '@ue-too/being-devtools';
 
 const panel = new MachineDebugger({
     container: document.getElementById('debug')!, // inline instead of overlay
-    hotkey: 'ctrl+alt+d',                          // or false to disable
+    hotkey: 'ctrl+alt+d', // or false to disable
     openByDefault: true,
 });
 panel.attach(machine, { name: 'pan-control' });
@@ -3479,7 +3526,8 @@ While any panel is alive, `window.__UE_TOO_BEING__` exposes `machines` (name →
 The panel borrows your machines. It never calls `wrapup()`, which would park a live machine in `TERMINAL` and, for a board, stop it responding to input. Reset is available because `reset()` restarts the machine; it is the recovery for a machine stranded by a hand-fired half-gesture.
 
 Machines that do not implement the optional `onEventResult` subscription still get the chart, current state and context, but no event log. `TemplateStateMachine` implements it.
-```
+
+````
 
 - [ ] **Step 2: Check `packages/being-devtools/typedoc.json`**
 
@@ -3487,7 +3535,7 @@ The scaffold's `categoryOrder` is `['Core', 'Helpers', 'Types', '*']`, matching 
 
 ```bash
 bunx nx docs:build being-devtools
-```
+````
 
 Expected: `docs/en/being-devtools/` (and other locales) generated without errors.
 
@@ -3525,7 +3573,8 @@ Claude-Session: https://claude.ai/code/session_018z87YjdvG72iGPz9DBC9A7"
 
 ```bash
 git push -u origin feat/being-devtools
-gh pr create --title "feat(being-devtools): attachable debugger panel for being machines" --body "$(cat <<'EOF'
+gh pr create --title "feat(being-devtools): attachable debugger panel for being machines" --body "$(
+    cat << 'EOF'
 ## Summary
 
 - New integration-layer package `@ue-too/being-devtools`: `attachMachineDebugger(machine)` straps the state machine visualizer onto any running `@ue-too/being` machine as a floating Shadow DOM overlay (Ctrl+Shift+M), with tabs per machine, a coalescing event log, precondition dimming, a context inspector, fire buttons, and reset. `attachBoardDebugger(board)` registers a board's five machines in one call. `MachineDebugger` gives full control (inline mount, custom hotkey).
